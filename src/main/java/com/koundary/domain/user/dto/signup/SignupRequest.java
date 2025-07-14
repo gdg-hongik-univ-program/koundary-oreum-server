@@ -1,33 +1,35 @@
 package com.koundary.domain.user.dto.signup;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class SignupRequest {
 
-    @NotBlank
+    @NotBlank(message = "국가는 필수 선택 항목입니다.")
     private String nationality;
 
-    @NotBlank
+    @NotBlank(message = "대학교는 필수 선택 항목입니다.")
     private String university;
 
-    @NotBlank
+    @NotBlank(message = "닉네임은 필수 입력 항목입니다.")
     private String nickname;
 
-    @NotBlank
+    @NotBlank(message = "아이디는 필수 입력 항목입니다.")
     private String loginID;
 
-    @NotBlank
+    @NotBlank(message = "비밀번호는 필수 입력 항목입니다.")
     private String password;
 
-    @NotBlank
+    @NotBlank(message = "비밀번호 확인은 필수 입력 항목입니다.")
     private String confirmPassword;
 
-    @NotBlank
+    @NotBlank(message = "학교 메일은 필수 입력 항목입니다.")
     private String universityEmail;
-
-    @NotBlank
-    private String emailVerificationCode;
-
-    public SignupRequest() {}
-
 }

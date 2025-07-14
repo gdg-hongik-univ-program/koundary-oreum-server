@@ -1,22 +1,14 @@
 package com.koundary.domain.user.dto.signup;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter @Setter
+@NoArgsConstructor
 public class CheckNicknameRequest {
-    @NotBlank
+
+    @NotBlank(message = "닉네임은 필수 입력 항목입니다.")
     private String nickname;
-
-    public CheckNicknameRequest() {}
-
-    public CheckNicknameRequest(@NotBlank String nickname) {
-        this.nickname = nickname;
-    }
-
-    public String getNickname() {
-        return nickname;
-    }
-
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
-    }
 }
