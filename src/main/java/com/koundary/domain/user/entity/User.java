@@ -2,30 +2,27 @@ package com.koundary.domain.user.entity;
 
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "loginId"),
-        @UniqueConstraint(columnNames = "nickname"),
-        @UniqueConstraint(columnNames = "universityEmail")
-} )
-
+@Table(name = "user")
+@Getter
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, unique = true, length = 50)
     private String loginId;
 
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, unique = true, length = 30)
     private String nickname;
 
     @Column(length = 50)
@@ -34,7 +31,7 @@ public class User {
     @Column(length = 100)
     private String university;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, unique = true, length = 100)
     private String universityEmail;
 
     @Column(nullable = false)
