@@ -2,7 +2,9 @@ package com.koundary.domain.user.entity;
 
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -10,6 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "user")
 @Getter
+@NoArgsConstructor
 public class User {
 
     @Id
@@ -43,6 +46,17 @@ public class User {
     @Column(length = 300)
     private String profileImage;
 
+    @Builder
+    public User(String loginId, String password, String nickname,
+                String nationality, String university, String universityEmail) {
+        this.loginId = loginId;
+        this.password = password;
+        this.nickname = nickname;
+        this.nationality = nationality;
+        this.university = university;
+        this.universityEmail = universityEmail;
+    }
+
     public void verifyEmail(){
         this.emailVerified = true;
     }
@@ -51,7 +65,4 @@ public class User {
         this.profileImage = imageUrl;
     }
 
-    public void updateNickname(String nickname){
-        this.nickname = nickname;
-    }
 }
