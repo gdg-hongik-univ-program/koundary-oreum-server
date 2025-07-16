@@ -2,6 +2,7 @@ package com.koundary.domain.user.entity;
 
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
         @UniqueConstraint(columnNames = "universityEmail")
 } )
 
+@Getter
 public class User {
 
     @Id
