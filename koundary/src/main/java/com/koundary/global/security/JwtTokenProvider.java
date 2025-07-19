@@ -12,6 +12,7 @@ import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
+
     private final Key key;
     private final long accessTokenExpiration;
     private final long refreshTokenExpiration;
@@ -26,6 +27,9 @@ public class JwtTokenProvider {
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
+    /**
+     * ✅ Access Token 생성
+     */
     public String generateToken(Long userId, String role) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + accessTokenExpiration);
@@ -39,6 +43,24 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    /**
+     * ✅ Refresh Token 생성 (추가됨)
+     */
+    public String generateRefreshToken(Long userId) {
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + refreshTokenExpiration);
+
+        return Jwts.builder()
+                .setSubject(String.valueOf(userId))
+                .setIssuedAt(now)
+                .setExpiration(expiration)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /**
+     * 토큰 유효성 검사
+     */
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -58,5 +80,4 @@ public class JwtTokenProvider {
     public long getRefreshTokenExpiration() {
         return refreshTokenExpiration;
     }
-
 }
