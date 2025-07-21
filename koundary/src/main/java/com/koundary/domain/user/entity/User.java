@@ -48,6 +48,46 @@ public class User {
     @Column(length = 300)
     private String profileImage;
 
+    public Long getUserId() {
+        return userId;
+    }
+
+    public String getLoginId() {
+        return loginId;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public String getNationality() {
+        return nationality;
+    }
+
+    public String getUniversity() {
+        return university;
+    }
+
+    public String getUniversityEmail() {
+        return universityEmail;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public String getProfileImage() {
+        return profileImage;
+    }
+
     public void verifyEmail(){
         this.emailVerified = true;
     }

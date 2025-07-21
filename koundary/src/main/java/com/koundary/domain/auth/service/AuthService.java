@@ -1,4 +1,4 @@
-package com.koundary.domain.user.service;
+package com.koundary.domain.auth.service;
 
 import com.koundary.domain.auth.entity.RefreshToken;
 import com.koundary.domain.auth.repository.RefreshTokenRepository;
@@ -10,8 +10,6 @@ import com.koundary.global.security.JwtTokenProvider;
 import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDateTime;
 
