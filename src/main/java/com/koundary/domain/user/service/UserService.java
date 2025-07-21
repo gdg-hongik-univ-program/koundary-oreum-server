@@ -24,7 +24,7 @@ public class UserService {
     @Transactional
     public void signup(SignupRequest signupRequest) {
 
-        if (userRepository.existsByLoginId(signupRequest.getLoginID())) {
+        if (userRepository.existsByLoginId(signupRequest.getLoginId())) {
             throw new IllegalArgumentException("이미 사용중인 아이디 입니다.");
         }
 
@@ -32,7 +32,7 @@ public class UserService {
             throw new IllegalArgumentException("이미 사용중인 닉네임입니다.");
         }
 
-        if (userRepository.existsByEmail(signupRequest.getUniversityEmail())){
+        if (userRepository.existsByUniversityEmail(signupRequest.getUniversityEmail())){
             throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
         }
 
@@ -48,7 +48,7 @@ public class UserService {
         String encodedPassword = passwordEncoder.encode(signupRequest.getPassword());
 
         User user = User.builder()
-                .loginId(signupRequest.getLoginID())
+                .loginId(signupRequest.getLoginId())
                 .password(encodedPassword)
                 .nickname(signupRequest.getNickname())
                 .university(signupRequest.getUniversityEmail())
@@ -59,8 +59,8 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public CheckAvailablityResponse checkLoginIDDuplicate(CheckLoginIDRequest dto) {
-        boolean exists = userRepository.existsByLoginId(dto.getLoginID());
+    public CheckAvailablityResponse checkLoginIdDuplicate(CheckLoginIDRequest dto) {
+        boolean exists = userRepository.existsByLoginId(dto.getLoginId());
         return exists
                 ? new CheckAvailablityResponse(false, "이미 사용중인 아이디입니다.")
                 : new CheckAvailablityResponse(true, "사용 가능한 아이디입니다.");

@@ -19,7 +19,7 @@ public class UserController {
 
     @PostMapping("/check-loginId")
     public ResponseEntity<CheckAvailablityResponse> checkLoginId(@RequestBody CheckLoginIDRequest dto) {
-        return ResponseEntity.ok(userService.checkLoginIDDuplicate(dto));
+        return ResponseEntity.ok(userService.checkLoginIdDuplicate(dto));
     }
 
     @PostMapping("/check-nickname")

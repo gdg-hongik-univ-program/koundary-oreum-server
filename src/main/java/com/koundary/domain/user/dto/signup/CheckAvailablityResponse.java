@@ -2,8 +2,11 @@ package com.koundary.domain.user.dto.signup;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Getter
+@Getter @Setter
+@NoArgsConstructor
 @AllArgsConstructor
 public class CheckAvailablityResponse {
 
