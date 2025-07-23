@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CheckLoginIDRequest {
+public class CheckLoginIdRequest {
 
     @NotBlank(message = "ID는 필수 입력 항목입니다.")
     private String loginId;

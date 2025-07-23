@@ -1,7 +1,7 @@
 package com.koundary.domain.user.service;
 
 import com.koundary.domain.user.dto.signup.CheckAvailablityResponse;
-import com.koundary.domain.user.dto.signup.CheckLoginIDRequest;
+import com.koundary.domain.user.dto.signup.CheckLoginIdRequest;
 import com.koundary.domain.user.dto.signup.CheckNicknameRequest;
 import com.koundary.domain.user.dto.signup.SignupRequest;
 import com.koundary.domain.user.entity.User;
@@ -59,7 +59,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public CheckAvailablityResponse checkLoginIdDuplicate(CheckLoginIDRequest dto) {
+    public CheckAvailablityResponse checkLoginIdDuplicate(CheckLoginIdRequest dto) {
         boolean exists = userRepository.existsByLoginId(dto.getLoginId());
         return exists
                 ? new CheckAvailablityResponse(false, "이미 사용중인 아이디입니다.")
