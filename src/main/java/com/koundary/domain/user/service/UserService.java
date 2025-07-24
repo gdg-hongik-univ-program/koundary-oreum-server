@@ -51,7 +51,7 @@ public class UserService {
                 .loginId(signupRequest.getLoginId())
                 .password(encodedPassword)
                 .nickname(signupRequest.getNickname())
-                .university(signupRequest.getUniversityEmail())
+                .universityEmail(signupRequest.getUniversityEmail())
                 .university(signupRequest.getUniversity())
                 .nationality(signupRequest.getNationality())
                 .build();

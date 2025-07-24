@@ -19,13 +19,15 @@ public class VerificationService {
     private final JavaMailSender javaMailSender;
 
     public void sendVerificationCode(String email) {
-        Optional<Verification> verification = verificationRepository.findByEmail(email);
+        Verification target;
 
-        if (verification.isPresent()) {
-            Verification existing = verification.get();
+        Optional<Verification> optionalVerification = verificationRepository.findByEmail(email);
+
+        if (optionalVerification.isPresent()) {
+            Verification existing = optionalVerification.get();
 
             if (existing.getLastSentAt() != null &&
-            existing.getLastSentAt().isAfter(LocalDateTime.now().minusMinutes(1))) {
+                    existing.getLastSentAt().isAfter(LocalDateTime.now().minusMinutes(1))) {
                 throw new IllegalArgumentException("인증 코드는 1분 후에 다시 요청할 수 있습니다.");
             }
 
@@ -33,19 +35,22 @@ public class VerificationService {
             existing.setVerified(false);
             existing.setExpiresAt(LocalDateTime.now().plusMinutes(5));
             existing.setLastSentAt(LocalDateTime.now());
-            verificationRepository.save(existing);
-        }else {
+
+            target = verificationRepository.save(existing);
+        } else {
             Verification newEntity = new Verification();
             newEntity.setEmail(email);
             newEntity.setCode(generateCode());
             newEntity.setVerified(false);
             newEntity.setExpiresAt(LocalDateTime.now().plusMinutes(5));
             newEntity.setLastSentAt(LocalDateTime.now());
-            verificationRepository.save(newEntity);
+
+            target = verificationRepository.save(newEntity);
         }
 
-        sendEmail(email,"인증코드: " + verification.orElseThrow().getCode());
+        sendEmail(email, "인증코드: " + target.getCode());
     }
+
 
     public void verifyCode(String email, String inputCode) {
         Verification verification = verificationRepository.findByEmail(email)
