@@ -8,13 +8,18 @@
         <processorPath useClasspath="false">
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.38/57f8f5e02e92a30fd21b80cbd426a4172b5f8e29/lombok-1.18.38.jar" />
         </processorPath>
-        <module name="koundary.test" />
-        <module name="koundary.main" />
+        <module name="com.koundary.koundary.main" />
+        <module name="com.koundary.koundary.test" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="koundary" target="17" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="com.koundary.koundary.main" options="-parameters" />
+      <module name="com.koundary.koundary.test" options="-parameters" />
       <module name="koundary" options="-parameters" />
       <module name="koundary.main" options="-parameters" />
       <module name="koundary.test" options="-parameters" />

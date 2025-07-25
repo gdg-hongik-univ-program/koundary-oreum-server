@@ -27,6 +27,7 @@ public class UserController {
         return ResponseEntity.ok(userService.checkNicknameDuplicate(CheckNicknameDto));
     }
 
+    /*  Verification Controller 부분에 구현함
     @PostMapping("/email/send-code")
     public ResponseEntity<String> sendVerificationCode(@RequestBody EmailRequest EmailDto) {
         verificationService.sendVerificationCode(EmailDto.getEmail());
@@ -38,6 +39,7 @@ public class UserController {
         verificationService.verifyCode(EmailVerifyDto.getEmail(), EmailVerifyDto.getCode());
         return ResponseEntity.ok("이메일 인증이 완료되었습니다.");
     }
+     */
 
     @PostMapping("/signup")
     public ResponseEntity<SignupMessageResponse> signup(@RequestBody SignupRequest SignupDto) {
