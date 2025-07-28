@@ -12,9 +12,6 @@
         <module name="com.koundary.koundary.test" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="koundary" target="17" />
-    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">

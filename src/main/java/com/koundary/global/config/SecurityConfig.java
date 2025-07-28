@@ -44,7 +44,6 @@ public class SecurityConfig {
                                 "/api/v1/verifications/confirm"
                         ).permitAll()
                         .anyRequest().authenticated()
-
                          */
                 );
 
