@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * RefreshToken entity
+ */
+
 @Entity
 public class RefreshToken {
     @Id
@@ -20,6 +24,13 @@ public class RefreshToken {
     private LocalDateTime expiry;
 
     public RefreshToken() {}
+
+    /**
+     *
+     * @param userId 사용자 ID
+     * @param token 저장할 RefreshToken
+     * @param expiry 토큰 만료 시간
+     */
 
     public RefreshToken(Long userId, String token, LocalDateTime expiry) {
         this.userId = userId;
