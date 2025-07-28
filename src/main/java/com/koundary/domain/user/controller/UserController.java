@@ -1,33 +1,62 @@
 package com.koundary.domain.user.controller;
 
 import com.koundary.domain.user.dto.signup.*;
+import com.koundary.domain.user.repository.UserRepository;
 import com.koundary.domain.user.service.UserService;
-import com.koundary.domain.verification.dto.EmailRequest;
-import com.koundary.domain.verification.dto.EmailVerifyRequest;
 import com.koundary.domain.verification.service.VerificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
+
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 @RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
     private final VerificationService verificationService;
 
     @PostMapping("/check-loginId")
     public ResponseEntity<CheckAvailablityResponse> checkLoginId(@RequestBody CheckLoginIdRequest CheckLoginIdDto) {
+        //System.out.println(CheckLoginIdDto.getLoginId());
         return ResponseEntity.ok(userService.checkLoginIdDuplicate(CheckLoginIdDto));
     }
 
     @PostMapping("/check-nickname")
     public ResponseEntity<CheckAvailablityResponse> checkNickname(@RequestBody CheckNicknameRequest CheckNicknameDto) {
+        //System.out.println(CheckNicknameDto.getNickname());
         return ResponseEntity.ok(userService.checkNicknameDuplicate(CheckNicknameDto));
     }
 
-    /*  Verification Controller 부분에 구현함
+/*
+    @PostMapping("/check-nickname")
+    public ResponseEntity<?> checkNickname(@RequestBody CheckNicknameRequest request) {
+        String nickname = request.getNickname();
+
+        log.info("✅ 프론트에서 전달받은 닉네임: [{}]", nickname);
+
+        boolean exists = userRepository.existsByNickname(nickname);
+        log.info("🔍 닉네임 존재 여부: {}", exists);
+
+        Map<String, Object> response = Map.of(
+                "success", !exists,
+                "message", exists ? "이미 존재하는 닉네임입니다." : "사용 가능한 닉네임입니다."
+        );
+
+        log.info("📤 응답 데이터: {}", response);
+        return ResponseEntity.ok(response);
+    }
+
+ */
+
+
+    /*  이메일 전송과 검증을 Verification Controller에 구현함
     @PostMapping("/email/send-code")
     public ResponseEntity<String> sendVerificationCode(@RequestBody EmailRequest EmailDto) {
         verificationService.sendVerificationCode(EmailDto.getEmail());
