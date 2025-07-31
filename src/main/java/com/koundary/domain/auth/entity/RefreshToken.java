@@ -69,4 +69,10 @@ public class RefreshToken {
     public void setExpiry(LocalDateTime expiry) {
         this.expiry = expiry;
     }
+
+    public void update(String newToken, LocalDateTime newExpiry) {
+        this.token = newToken;
+        this.expiry = newExpiry;
+    }
+
 }

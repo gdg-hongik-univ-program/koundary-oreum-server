@@ -70,4 +70,40 @@ public class AuthService {
     public void logout(Long userId) {
         refreshTokenRepository.deleteByUserId(userId);
     }
+
+    @Transactional
+    public LoginResponse reissue(String refreshToken) {
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+        }
+
+        Long userId = jwtTokenProvider.getUserId(refreshToken);
+
+        RefreshToken savedToken = refreshTokenRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("저장된 리프레시 토큰이 없습니다."));
+
+        if (!savedToken.getToken().equals(refreshToken)) {
+            throw new IllegalArgumentException("리프레시 토큰이 일치하지 않습니다.");
+        }
+
+        String newAccessToken = jwtTokenProvider.generateToken(userId, "USER");
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
+
+        savedToken.update(newRefreshToken,
+                LocalDateTime.now().plusSeconds(jwtTokenProvider.getRefreshTokenExpiration()));
+        refreshTokenRepository.save(savedToken);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다."));
+
+        return new LoginResponse(
+                newAccessToken,
+                newRefreshToken,
+                user.getUserId(),
+                user.getNickname(),
+                user.getProfileImage()
+        );
+    }
+
+
 }
