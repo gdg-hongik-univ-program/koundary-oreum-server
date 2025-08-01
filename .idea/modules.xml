@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.koundary.koundary.main.iml" filepath="$PROJECT_DIR$/.idea/modules/com.koundary.koundary.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.koundary.koundary.test.iml" filepath="$PROJECT_DIR$/.idea/modules/com.koundary.koundary.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/koundary.main.iml" filepath="$PROJECT_DIR$/.idea/modules/koundary.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/koundary.test.iml" filepath="$PROJECT_DIR$/.idea/modules/koundary.test.iml" />
     </modules>
   </component>
 </project>
