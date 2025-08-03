@@ -1,4 +1,12 @@
 package com.koundary.domain.post.dto;
 
-public class PostResponse {
-}
+import java.time.LocalDateTime;
+
+public record PostResponse(
+        Long postId,
+        String boardCode,
+        String title,
+        String content,
+        Long userId,
+        LocalDateTime createdAt
+) {}

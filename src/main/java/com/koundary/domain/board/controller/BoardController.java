@@ -14,7 +14,7 @@ public class BoardController {
 
     private final BoardService boardService;
 
-    @GetMapping
+    @GetMapping(produces = "application/json; charset=UTF-8")
     public List<BoardResponse> getBoards() {
         return boardService.getAllBoards();
     }

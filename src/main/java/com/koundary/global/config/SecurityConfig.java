@@ -11,11 +11,19 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import com.koundary.global.security.JwtTokenProvider;
+import com.koundary.domain.user.repository.UserRepository;
+import com.koundary.global.security.JwtAuthenticationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+
+    private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
     // 1. 비밀번호 인코더 등록
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -36,17 +44,15 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                                .anyRequest().permitAll()
-                        /*.requestMatchers(
-                                "/api/v1/users/signup",
-                                "/api/v1/users/login",
-                                "/api/v1/verifications/send",
-                                "/api/v1/verifications/confirm"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-                         */
+                        .anyRequest().permitAll()
+                )
+                .addFilterBefore(
+                        new JwtAuthenticationFilter(jwtTokenProvider, userRepository),
+                        UsernamePasswordAuthenticationFilter.class
                 );
 
         return http.build();
     }
+
+
 }
