@@ -8,9 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Map;
-
 
 @RestController
 @RequiredArgsConstructor
@@ -46,29 +44,7 @@ public class UserController {
         return ResponseEntity.ok(userService.checkNicknameDuplicate(CheckNicknameDto));
     }
 
-/*
-    @PostMapping("/check-nickname")
-    public ResponseEntity<?> checkNickname(@RequestBody CheckNicknameRequest request) {
-        String nickname = request.getNickname();
-
-        log.info("✅ 프론트에서 전달받은 닉네임: [{}]", nickname);
-
-        boolean exists = userRepository.existsByNickname(nickname);
-        log.info("🔍 닉네임 존재 여부: {}", exists);
-
-        Map<String, Object> response = Map.of(
-                "success", !exists,
-                "message", exists ? "이미 존재하는 닉네임입니다." : "사용 가능한 닉네임입니다."
-        );
-
-        log.info("📤 응답 데이터: {}", response);
-        return ResponseEntity.ok(response);
-    }
-
- */
-
-
-    /*  이메일 전송과 검증을 Verification Controller에 구현함
+    /*  Verification Controller 부분에 구현함
     @PostMapping("/email/send-code")
     public ResponseEntity<String> sendVerificationCode(@RequestBody EmailRequest EmailDto) {
         verificationService.sendVerificationCode(EmailDto.getEmail());

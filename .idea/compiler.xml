@@ -12,14 +12,9 @@
         <module name="com.koundary.koundary.test" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel target="17" />
   </component>
   <component name="JavacSettings">
-    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="com.koundary.koundary.main" options="-parameters" />
-      <module name="com.koundary.koundary.test" options="-parameters" />
-      <module name="koundary" options="-parameters" />
-      <module name="koundary.main" options="-parameters" />
-      <module name="koundary.test" options="-parameters" />
-    </option>
+    <option name="ADDITIONAL_OPTIONS_STRING" value="-parameters" />
   </component>
 </project>

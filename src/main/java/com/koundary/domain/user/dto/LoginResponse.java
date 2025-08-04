@@ -1,5 +1,8 @@
 package com.koundary.domain.user.dto;
 
+/**
+ * 로그인 성공 시 클라이언트에게 전달되는 응답 DTO
+ */
 public class LoginResponse {
     private String accessToken;
     private String refreshToken;
