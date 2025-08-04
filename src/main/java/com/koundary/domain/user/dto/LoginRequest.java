@@ -2,6 +2,9 @@ package com.koundary.domain.user.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * 로그인 요청 정보를 담는 DTO
+ */
 public class LoginRequest {
     @NotBlank(message = "아이디를 입력해 주세요.")
     private String loginId;

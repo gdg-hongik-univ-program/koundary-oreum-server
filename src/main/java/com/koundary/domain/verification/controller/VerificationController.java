@@ -1,5 +1,6 @@
 package com.koundary.domain.verification.controller;
 
+import com.koundary.domain.verification.dto.EmailRequest;
 import com.koundary.domain.verification.dto.EmailVerifyRequest;
 import com.koundary.domain.verification.service.VerificationService;
 import lombok.RequiredArgsConstructor;
@@ -17,9 +18,9 @@ public class VerificationController {
     private final VerificationService verificationService;
 
     @PostMapping("/send-code")
-    public ResponseEntity<String> sendCode(@RequestBody EmailVerifyRequest dto) {
+    public ResponseEntity<String> sendCode(@RequestBody EmailRequest dto) {
         verificationService.sendVerificationCode(dto.getEmail());
-        return ResponseEntity.ok("인증코드가 전송되었습니다.");
+        return ResponseEntity.ok("인증코드가 전송되었습니다. 메일을 확인해주세요.");
     }
 
     @PostMapping("verify-code")
