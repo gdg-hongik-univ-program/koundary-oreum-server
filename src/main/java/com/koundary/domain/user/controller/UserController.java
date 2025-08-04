@@ -22,12 +22,24 @@ public class UserController {
     private final UserRepository userRepository;
     private final VerificationService verificationService;
 
+    /**
+     * 아이디 중복확인
+     *
+     * @param CheckLoginIdDto 아이디 중복확인 체크를 위한 dto
+     * @return 아이디 중복확인 결과 엔티티 (bool, message)
+     */
     @PostMapping("/check-loginId")
     public ResponseEntity<CheckAvailablityResponse> checkLoginId(@RequestBody CheckLoginIdRequest CheckLoginIdDto) {
         //System.out.println(CheckLoginIdDto.getLoginId());
         return ResponseEntity.ok(userService.checkLoginIdDuplicate(CheckLoginIdDto));
     }
 
+    /**
+     * 닉네임 중복확인
+     *
+     * @param CheckNicknameDto 닉네임 중복확인 체크를 위한 dto
+     * @return 닉네임 중복확인 결과 엔티티 (bool, message)
+     */
     @PostMapping("/check-nickname")
     public ResponseEntity<CheckAvailablityResponse> checkNickname(@RequestBody CheckNicknameRequest CheckNicknameDto) {
         //System.out.println(CheckNicknameDto.getNickname());
@@ -70,6 +82,12 @@ public class UserController {
     }
      */
 
+    /**
+     * 회원가입 요청
+     *
+     * @param SignupDto 회원가입 요청 dto
+     * @return 회원가입 완료 메시지
+     */
     @PostMapping("/signup")
     public ResponseEntity<SignupMessageResponse> signup(@RequestBody SignupRequest SignupDto) {
         userService.signup(SignupDto);
