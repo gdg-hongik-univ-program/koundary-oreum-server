@@ -45,7 +45,7 @@ public class User {
     private LocalDateTime createdAt;
 
     @Column(length = 300)
-    private String profileImage;
+    private String profileImageUrl;
 
     @Builder
     public User(String loginId, String password, String nickname,
@@ -63,7 +63,7 @@ public class User {
     }
 
     public void updateProfileImage(String imageUrl){
-        this.profileImage = imageUrl;
+        this.profileImageUrl = imageUrl;
     }
 
 }

@@ -1,4 +1,4 @@
 package com.koundary.domain.myPage.repository;
 
-public class myPageRepository {
+public class MyPageRepository {
 }
