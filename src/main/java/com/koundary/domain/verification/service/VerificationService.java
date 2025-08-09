@@ -48,7 +48,7 @@ public class VerificationService {
             target = verificationRepository.save(newEntity);
         }
 
-        sendEmail(email, "인증코드: " + target.getCode());
+        sendEmail(email, target.getCode());
     }
 
 
