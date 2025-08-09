@@ -123,7 +123,7 @@ public class CommentService {
                 .postId(postId)
                 .authorId(authorId)
                 .authorNickname(c.getAuthor().getNickname())
-                .authorProfileImage(c.getAuthor().getProfileImage())
+                .authorProfileImage(c.getAuthor().getProfileImageUrl())
                 .content(c.isDeleted() ? "(삭제된 댓글입니다)" : c.getContent())
                 .deleted(c.isDeleted())
                 .mine(currentUserId != null && authorId.equals(currentUserId))

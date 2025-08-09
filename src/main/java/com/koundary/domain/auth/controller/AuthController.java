@@ -51,6 +51,4 @@ public class AuthController {
         LoginResponse response = authService.reissue(refreshToken);
         return ResponseEntity.ok(response);
     }
-
-
 }
