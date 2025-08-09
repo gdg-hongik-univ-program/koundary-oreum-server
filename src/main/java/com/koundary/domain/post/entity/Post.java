@@ -8,7 +8,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -51,9 +50,8 @@ public class Post {
      */
 
     //이미지
-    @Builder.Default
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Image> images = new ArrayList<>();
+    private List<Image> images;
 
     @PrePersist
     public void onCreate() {
