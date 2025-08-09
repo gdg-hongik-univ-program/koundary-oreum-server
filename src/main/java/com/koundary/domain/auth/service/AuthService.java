@@ -63,7 +63,7 @@ public class AuthService {
                 refreshToken,
                 user.getUserId(),
                 user.getNickname(),
-                user.getProfileImage()
+                user.getProfileImageUrl()
         );
     }
     @Transactional
@@ -101,7 +101,7 @@ public class AuthService {
                 newRefreshToken,
                 user.getUserId(),
                 user.getNickname(),
-                user.getProfileImage()
+                user.getProfileImageUrl()
         );
     }
 
