@@ -27,7 +27,7 @@ public class MyPageController {
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping
+    @DeleteMapping("/delete-account")
     public ResponseEntity<Void> deleteMyAccount() {
         myPageService.deleteMyAccount();
         return ResponseEntity.noContent().build();
