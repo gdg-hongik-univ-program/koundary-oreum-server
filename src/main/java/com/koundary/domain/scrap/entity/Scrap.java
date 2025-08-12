@@ -7,11 +7,14 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(
+        name = "scrap",
+        uniqueConstraints = @UniqueConstraint(name = "uk_scrap_user_post", columnNames = {"user_id", "post_id"})
+)
 public class Scrap {
 
     @Id
@@ -31,9 +34,4 @@ public class Scrap {
     // 스크랩 시각
     @Column(nullable = false)
     private LocalDateTime createdAt;
-
-    @PrePersist
-    void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
 }

@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface VerificationRepository extends JpaRepository<Verification, String> {
     Optional<Verification> findByEmail(String email);
+
+    void deleteByEmail(String email);
 }

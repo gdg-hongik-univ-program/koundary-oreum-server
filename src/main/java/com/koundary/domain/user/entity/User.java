@@ -49,13 +49,14 @@ public class User {
 
     @Builder
     public User(String loginId, String password, String nickname,
-                String nationality, String university, String universityEmail) {
+                String nationality, String university, String universityEmail, String profileImageUrl) {
         this.loginId = loginId;
         this.password = password;
         this.nickname = nickname;
         this.nationality = nationality;
         this.university = university;
         this.universityEmail = universityEmail;
+        this.profileImageUrl = profileImageUrl;
     }
 
     public void verifyEmail(){

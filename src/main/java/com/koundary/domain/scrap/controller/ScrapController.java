@@ -1,13 +1,12 @@
 package com.koundary.domain.scrap.controller;
 
-import com.koundary.domain.scrap.dto.ScrapResponse;
+import com.koundary.domain.scrap.dto.ScrapMessageResponse;
+import com.koundary.domain.scrap.exception.DuplicateScrapException;
 import com.koundary.domain.scrap.service.ScrapService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,21 +16,27 @@ public class ScrapController {
 
     // 스크랩 추가
     @PostMapping("/posts/{postId}/scrap")
-    public ResponseEntity<Void> addScrap(@PathVariable Long postId) {
+    public ResponseEntity<ScrapMessageResponse> createScrap(@PathVariable Long postId) {
         scrapService.addScrap(postId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new ScrapMessageResponse("스크랩 완료"));
     }
 
     // 스크랩 삭제
     @DeleteMapping("/posts/{postId}/scrap")
-    public ResponseEntity<Void> removeScrap(@PathVariable Long postId) {
+    public ResponseEntity<ScrapMessageResponse> deleteScrap(@PathVariable Long postId) {
         scrapService.removeScrap(postId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new ScrapMessageResponse("스크랩 해제 완료"));
     }
 
-    // 스크랩 토글
-    @PostMapping("/posts/{postId}/scrap/toggle")
-    public ResponseEntity<ScrapResponse> toggleScrap(@PathVariable Long postId) {
-        return ResponseEntity.ok(scrapService.toggleScrap(postId));
+    @ExceptionHandler(DuplicateScrapException.class)
+    public ResponseEntity<ScrapMessageResponse> handleDuplicateScrapException(DuplicateScrapException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ScrapMessageResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ScrapMessageResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ScrapMessageResponse(ex.getMessage()));
     }
 }

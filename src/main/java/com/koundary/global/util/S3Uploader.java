@@ -54,7 +54,7 @@ public class S3Uploader {
         }
 
         // 비공개 버킷이므로 URL 대신 key 반환(권장)
-        return key;
+        return s3.utilities().getUrl(b -> b.bucket(bucket).key(key)).toString();
     }
 
     public void delete(String key) {
@@ -64,5 +64,22 @@ public class S3Uploader {
     private String getExtension(String filename) {
         int dot = filename.lastIndexOf('.');
         return (dot >= 0) ? filename.substring(dot).toLowerCase() : "";
+    }
+
+    public String keyFromUrl(String url) {
+        try {
+            java.net.URI uri = java.net.URI.create(url);
+            String host = uri.getHost();
+            if (host == null || !host.startsWith(bucket + "s3")) {
+                throw new IllegalArgumentException("버킷이 다른 URL입니다." + url);
+            }
+            String path = uri.getPath();
+            if (path == null || path.isEmpty() || path.equals("/")) {
+                throw new IllegalArgumentException("유효하지 않은 S3 URL: " + url);
+            }
+            return path.startsWith("/") ? path.substring(1) : path;
+        }catch (Exception e) {
+            throw new IllegalArgumentException("S3 URL 파싱 실패: " + url, e);
+        }
     }
 }
