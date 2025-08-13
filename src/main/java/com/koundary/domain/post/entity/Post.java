@@ -80,7 +80,7 @@ public class Post {
         this.language = language;
     }
      */
-    
+
     // 글이 지워질 때 해당 글을 스크랩한 레코드 제거
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Scrap> scraps = new ArrayList<>();

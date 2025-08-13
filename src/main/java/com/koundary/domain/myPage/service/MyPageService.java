@@ -47,9 +47,22 @@ public class MyPageService {
     @Transactional
     public void updatePassword(UpdatePasswordRequest request) {
         User user = getCurrentUser(); // 영속성 엔티티
+
+        // 현재 비밀번호 확인
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
         }
+
+        // 새 비밀번호, 확인 일치
+        if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
+            throw new IllegalArgumentException("새 비밀번호 확인이 일치하지 않습니다.");
+        }
+
+        // 새 비밀번호가 기존과 동일한지 검사
+        if (passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("기존 비밀번호와 다른 새 비밀번호를 입력해주세요");
+        }
+        // 저장
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
     }
