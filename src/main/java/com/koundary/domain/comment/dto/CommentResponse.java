@@ -1,29 +1,5 @@
 package com.koundary.domain.comment.dto;
 
-<<<<<<< HEAD
-import com.koundary.domain.comment.entity.Comment;
-import lombok.Builder;
-import lombok.Getter;
-
-import java.time.LocalDateTime;
-
-@Getter
-@Builder
-public class CommentResponse {
-    private Long id;
-    private String content;
-    private String authorNickname;
-    private LocalDateTime createdAt;
-
-    public static CommentResponse from(Comment comment) {
-        return CommentResponse.builder()
-                .id(comment.getId())
-                .content(comment.getContent())
-                .authorNickname(comment.getUser().getNickname())
-                .createdAt(comment.getCreatedAt())
-                .build();
-    }
-=======
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -56,5 +32,4 @@ public class CommentResponse {
 
     // 대댓글 개수 (목록에서 “더보기” 버튼 표시용)
     private Integer replyCount;
->>>>>>> b1
 }
