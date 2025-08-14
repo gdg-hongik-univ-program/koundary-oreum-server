@@ -15,6 +15,7 @@ import com.koundary.global.security.JwtTokenProvider;
 import com.koundary.domain.user.repository.UserRepository;
 import com.koundary.global.security.JwtAuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import com.koundary.global.i18n.LocaleUserFilter;
 
 
 @Configuration
@@ -39,7 +40,7 @@ public class SecurityConfig {
 
     // 3. 보안 필터 체인
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, LocaleUserFilter localeUserFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -49,7 +50,8 @@ public class SecurityConfig {
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtTokenProvider, userRepository),
                         UsernamePasswordAuthenticationFilter.class
-                );
+                )
+                .addFilterAfter(localeUserFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
