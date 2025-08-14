@@ -31,7 +31,7 @@ public class Comment {
     // 작성자
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id") // DB 컬럼명 고정
-    private User author;
+    private User user;
 
     // 대댓글: 부모 댓글
     @ManyToOne(fetch = FetchType.LAZY)
@@ -72,7 +72,7 @@ public class Comment {
 
     // 편의 메서드
     public void assignPost(Post post) { this.post = post; }
-    public void assignAuthor(User user) { this.author = user; }
+    public void assignAuthor(User user) { this.user = user; }
     public void assignParent(Comment parent) { this.parent = parent; }
 
     public boolean isTopLevel() { return parent == null; }

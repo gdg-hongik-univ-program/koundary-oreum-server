@@ -36,7 +36,7 @@ public class CommentService {
 
         Comment comment = Comment.builder()
                 .post(post)
-                .author(user)
+                .user(user)
                 .content(req.getContent())
                 .deleted(false)
                 .build();
@@ -59,7 +59,7 @@ public class CommentService {
 
         Comment reply = Comment.builder()
                 .post(parent.getPost())
-                .author(user)
+                .user(user)
                 .parent(parent)
                 .content(req.getContent())
                 .deleted(false)
@@ -90,7 +90,7 @@ public class CommentService {
     public CommentResponse update(Long commentId, Long userId, CommentUpdateRequest req) {
         Comment c = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
-        if (!c.getAuthor().getUserId().equals(userId)) {
+        if (!c.getUser().getUserId().equals(userId)) {
             throw new SecurityException("수정 권한이 없습니다.");
         }
         if (c.isDeleted()) {
@@ -105,7 +105,7 @@ public class CommentService {
     public void delete(Long commentId, Long userId) {
         Comment c = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
-        if (!c.getAuthor().getUserId().equals(userId)) {
+        if (!c.getUser().getUserId().equals(userId)) {
             throw new SecurityException("삭제 권한이 없습니다.");
         }
         if (!c.isDeleted()) {
@@ -115,15 +115,15 @@ public class CommentService {
 
     // ------------------ mapper ------------------
     private CommentResponse toDto(Comment c, Long currentUserId, int replyCount) {
-        Long authorId = c.getAuthor().getUserId();
+        Long authorId = c.getUser().getUserId();
         Long postId = c.getPost().getPostId();
 
         return CommentResponse.builder()
                 .commentId(c.getId())
                 .postId(postId)
                 .authorId(authorId)
-                .authorNickname(c.getAuthor().getNickname())
-                .authorProfileImage(c.getAuthor().getProfileImageUrl())
+                .authorNickname(c.getUser().getNickname())
+                .authorProfileImage(c.getUser().getProfileImageUrl())
                 .content(c.isDeleted() ? "(삭제된 댓글입니다)" : c.getContent())
                 .deleted(c.isDeleted())
                 .mine(currentUserId != null && authorId.equals(currentUserId))

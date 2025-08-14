@@ -15,11 +15,11 @@ import java.util.List;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     // 게시글의 최상위 댓글 페이지 조회
-    @EntityGraph(attributePaths = {"author"})
+    @EntityGraph(attributePaths = {"user"})
     Page<Comment> findByPost_PostIdAndParentIsNullOrderByCreatedAtAsc(Long postId, Pageable pageable);
 
     // 특정 댓글의 대댓글 목록
-    @EntityGraph(attributePaths = {"author"})
+    @EntityGraph(attributePaths = {"user"})
     List<Comment> findByParent_IdOrderByCreatedAtAsc(Long parentId);
 
     // 대댓글 개수
@@ -28,14 +28,14 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     // 게시글 전체 댓글 수 (소프트삭제 제외)
     int countByPost_PostIdAndDeletedFalse(Long postId);
 
-    long countByAuthorAndPost(User author, Post post);
+    long countByUserAndPost(User user, Post post);
 
     @Query("""
            select c.post as post,
                   max(c.createdAt) as lastAt,
                   count(c) as cnt
            from Comment c
-           where c.author = :user
+           where c.user = :user
            group by c.post
            order by max(c.createdAt) desc
            """)
