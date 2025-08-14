@@ -38,16 +38,21 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
         String token = jwtTokenProvider.resolveToken(request);
-        if (token == null || !jwtTokenProvider.validateToken(token)) {
-            return ResponseEntity.badRequest().body("유효하지 않은 토큰입니다.");
+        // ✅ Access 전용 검증 사용
+        if (token == null || !jwtTokenProvider.validateAccessToken(token)) {
+            return ResponseEntity.badRequest().body("유효하지 않은 Access Token입니다.");
         }
-
-        Long userId = jwtTokenProvider.getUserId(token);
+        Long userId = jwtTokenProvider.getUserIdFromAccessToken(token);
         authService.logout(userId);
         return ResponseEntity.ok("Logout successful");
     }
+
     @PostMapping("/reissue")
     public ResponseEntity<LoginResponse> reissue(@RequestHeader("Refresh-Token") String refreshToken) {
+        // ✅ Refresh 전용 검증 사용
+        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+        }
         LoginResponse response = authService.reissue(refreshToken);
         return ResponseEntity.ok(response);
     }
