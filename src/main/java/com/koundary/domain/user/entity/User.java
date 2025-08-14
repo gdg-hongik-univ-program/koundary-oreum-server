@@ -1,6 +1,5 @@
 package com.koundary.domain.user.entity;
 
-
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
