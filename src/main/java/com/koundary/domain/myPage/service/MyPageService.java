@@ -44,6 +44,21 @@ public class MyPageService {
     @org.springframework.beans.factory.annotation.Value("${app.defaults.profile-image-url}")
     private String defaultProfileImageUrl;
 
+    @Transactional(readOnly = true)
+    public MyPageProfileResponse getMyPageProfile() {
+        User me = getCurrentUser(); // 아래 헬퍼
+        Long uid = me.getUserId();
+
+        return MyPageProfileResponse.builder()
+                .userId(uid)
+                .loginId(me.getLoginId())          // 프로젝트의 필드명에 맞게 조정
+                .nickname(me.getNickname())
+                .universityEmail(me.getUniversityEmail())
+                .profileImageUrl(me.getProfileImageUrl())
+                .createdAt(me.getCreatedAt())
+                .build();
+    }
+
     @Transactional
     public void updatePassword(UpdatePasswordRequest request) {
         User user = getCurrentUser(); // 영속성 엔티티

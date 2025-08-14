@@ -22,6 +22,12 @@ public class MyPageController {
 
     private final MyPageService myPageService;
 
+    @GetMapping("/me")
+    public ResponseEntity<MyPageProfileResponse> getMyPageProfile() {
+         MyPageProfileResponse profile = myPageService.getMyPageProfile();
+         return ResponseEntity.ok(profile);
+    }
+
     @PutMapping("/password")
     public ResponseEntity<MyPageMessageResponse> updatePassword(@RequestBody UpdatePasswordRequest request) {
         myPageService.updatePassword(request);
