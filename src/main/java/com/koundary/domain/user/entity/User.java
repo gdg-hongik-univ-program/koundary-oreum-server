@@ -1,14 +1,20 @@
 package com.koundary.domain.user.entity;
 
 
+import com.koundary.domain.comment.entity.Comment;
+import com.koundary.domain.post.entity.Post;
+import com.koundary.domain.scrap.entity.Scrap;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "user")
@@ -49,13 +55,14 @@ public class User {
 
     @Builder
     public User(String loginId, String password, String nickname,
-                String nationality, String university, String universityEmail) {
+                String nationality, String university, String universityEmail, String profileImageUrl) {
         this.loginId = loginId;
         this.password = password;
         this.nickname = nickname;
         this.nationality = nationality;
         this.university = university;
         this.universityEmail = universityEmail;
+        this.profileImageUrl = profileImageUrl;
     }
 
     public void verifyEmail(){
@@ -66,4 +73,12 @@ public class User {
         this.profileImageUrl = imageUrl;
     }
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Post> posts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Scrap> scraps = new ArrayList<>();
 }

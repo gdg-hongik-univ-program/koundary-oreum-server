@@ -9,6 +9,7 @@ import com.koundary.domain.user.repository.UserRepository;
 import com.koundary.domain.verification.service.VerificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,9 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final VerificationService VerificationService;
+
+    @Value("${app.defaults.profile-image-url}")
+    private String defaultProfileImageUrl;
 
     @Transactional
     public void signup(SignupRequest signupRequest) {
@@ -54,6 +58,7 @@ public class UserService {
                 .universityEmail(signupRequest.getUniversityEmail())
                 .university(signupRequest.getUniversity())
                 .nationality(signupRequest.getNationality())
+                .profileImageUrl(defaultProfileImageUrl)
                 .build();
 
         userRepository.save(user);

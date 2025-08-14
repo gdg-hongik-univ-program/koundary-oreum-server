@@ -3,6 +3,7 @@ package com.koundary.domain.post.entity;
 
 import com.koundary.domain.board.entity.Board;
 import com.koundary.domain.language.entity.Language;
+import com.koundary.domain.scrap.entity.Scrap;
 import com.koundary.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -79,4 +80,8 @@ public class Post {
         this.language = language;
     }
      */
+
+    // 글이 지워질 때 해당 글을 스크랩한 레코드 제거
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Scrap> scraps = new ArrayList<>();
 }
