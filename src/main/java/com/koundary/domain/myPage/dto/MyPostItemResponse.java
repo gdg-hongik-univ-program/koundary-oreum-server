@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 public class MyPostItemResponse {
     private Long postId;
     private String title;
-    private String contentPreview;
+    private String boardCode;
+    private String boardName;
     private LocalDateTime createdAt;
 }

@@ -1,10 +1,12 @@
 package com.koundary.domain.comment.repository;
 
 import com.koundary.domain.comment.entity.Comment;
+import com.koundary.domain.myPage.dto.MyPostItemResponse;
 import com.koundary.domain.post.entity.Post;
 import com.koundary.domain.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -28,20 +30,39 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     // 게시글 전체 댓글 수 (소프트삭제 제외)
     int countByPost_PostIdAndDeletedFalse(Long postId);
 
-    long countByAuthorAndPost(User author, Post post);
+    long countByUserAndPost(User author, Post post);
+
+    @Query(
+            value = """
+        select distinct new com.koundary.domain.myPage.dto.MyPostItemResponse(
+          p.postId, p.title, b.boardCode, b.boardName, p.createdAt
+        )
+        from Comment c
+        join c.post p
+        join p.board b
+        where c.user.userId = :userId
+        order by p.createdAt desc, p.postId desc
+      """,
+            countQuery = """
+        select count(distinct p.postId)
+        from Comment c
+        join c.post p
+        where c.user.userId = :userId
+      """
+    )
+    Page<MyPostItemResponse> findMyCommentedPosts(Long userId, Pageable pageable);
 
     @Query("""
-           select c.post as post,
-                  max(c.createdAt) as lastAt,
-                  count(c) as cnt
-           from Comment c
-           where c.author = :user
-           group by c.post
-           order by max(c.createdAt) desc
-           """)
-    Page<CommentRepository.CommentedPostProjection> findCommentedPostsWithLastTimeAndCount(
-            @Param("user") User user, Pageable pageable
-    );
+        select distinct new com.koundary.domain.myPage.dto.MyPostItemResponse(
+          p.postId, p.title, b.boardCode, b.boardName, p.createdAt
+        )
+        from Comment c
+        join c.post p
+        join p.board b
+        where c.user.userId = :userId
+        order by p.createdAt desc, p.postId desc
+    """)
+    Slice<MyPostItemResponse> sliceMyCommentedPosts(Long userId, Pageable pageable);
 
     interface CommentedPostProjection {
         Post getPost();

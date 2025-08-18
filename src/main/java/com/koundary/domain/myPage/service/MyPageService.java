@@ -143,9 +143,11 @@ public class MyPageService {
         }
 
         Object principal = auth.getPrincipal();
+
         if (principal instanceof CustomUserDetails customUserDetails) {
             return customUserDetails.getUser();
         }
+
         throw new IllegalStateException("인증된 사용자 정보를 찾을 수 없습니다.");
     }
 
