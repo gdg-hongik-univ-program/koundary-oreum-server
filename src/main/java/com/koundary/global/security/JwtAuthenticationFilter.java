@@ -29,17 +29,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = jwtTokenProvider.resolveToken(request);
 
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-            Long userId = jwtTokenProvider.getUserId(token);
+        // ✅ Access 전용 검증 사용
+        if (token != null && jwtTokenProvider.validateAccessToken(token)) {
+            Long userId = jwtTokenProvider.getUserIdFromAccessToken(token);
             User user = userRepository.findById(userId).orElse(null);
 
             if (user != null) {
                 CustomUserDetails userDetails = new CustomUserDetails(user);
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities()
+                        );
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
