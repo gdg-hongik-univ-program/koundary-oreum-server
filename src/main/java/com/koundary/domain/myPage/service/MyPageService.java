@@ -51,9 +51,11 @@ public class MyPageService {
 
         return MyPageProfileResponse.builder()
                 .userId(uid)
-                .loginId(me.getLoginId())          // 프로젝트의 필드명에 맞게 조정
+                .loginId(me.getLoginId())
                 .nickname(me.getNickname())
+                .university(me.getUniversity())
                 .universityEmail(me.getUniversityEmail())
+                .nationality(me.getNationality())
                 .profileImageUrl(me.getProfileImageUrl())
                 .createdAt(me.getCreatedAt())
                 .build();
@@ -74,7 +76,7 @@ public class MyPageService {
         }
 
         // 새 비밀번호가 기존과 동일한지 검사
-        if (passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+        if (request.getNewPassword().equals(request.getCurrentPassword())) {
             throw new IllegalArgumentException("기존 비밀번호와 다른 새 비밀번호를 입력해주세요");
         }
         // 저장

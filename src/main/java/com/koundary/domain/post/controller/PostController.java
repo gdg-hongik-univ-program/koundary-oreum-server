@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -31,4 +33,11 @@ public class PostController {
         PostResponse response = postService.createPost(boardCode, request, userId);
         return ResponseEntity.ok(response);
     }
+    // 게시글 목록 조회
+    @GetMapping
+    public ResponseEntity<List<PostResponse>> getPosts(@PathVariable String boardCode) {
+        List<PostResponse> posts = postService.getPostsByBoard(boardCode);
+        return ResponseEntity.ok(posts);
+    }
+
 }

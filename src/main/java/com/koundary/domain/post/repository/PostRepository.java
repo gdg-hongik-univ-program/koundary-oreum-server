@@ -14,4 +14,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findTop3ByBoardOrderByCreatedAtDesc(Board board);
 
     Page<Post> findAllByUser(User user, PageRequest pageable);
+
+    // ✅ 게시판별 게시글 전체 조회 (최신순)
+    List<Post> findAllByBoardOrderByCreatedAtDesc(Board board);
 }
