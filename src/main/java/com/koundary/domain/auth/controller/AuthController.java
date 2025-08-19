@@ -36,18 +36,33 @@ public class AuthController {
      * 로그아웃
      */
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request) {
-        String token = jwtTokenProvider.resolveToken(request);
-        if (token == null || !jwtTokenProvider.validateToken(token)) {
-            return ResponseEntity.badRequest().body("유효하지 않은 토큰입니다.");
+    public ResponseEntity<String> logout(
+            HttpServletRequest request,
+            @RequestHeader(value = "Refresh-Token", required = false) String refreshHeader
+    ) {
+        String access = jwtTokenProvider.resolveToken(request);
+
+        if (access != null && jwtTokenProvider.validateAccessToken(access)) {
+            Long userId = jwtTokenProvider.getUserIdFromAccessToken(access);
+            authService.logout(userId);
+            return ResponseEntity.ok("Logout successful (by access)");
         }
 
-        Long userId = jwtTokenProvider.getUserId(token);
-        authService.logout(userId);
-        return ResponseEntity.ok("Logout successful");
+        if (refreshHeader != null && jwtTokenProvider.validateRefreshToken(refreshHeader)) {
+            Long userId = jwtTokenProvider.getUserIdFromRefreshToken(refreshHeader);
+            authService.logout(userId);
+            return ResponseEntity.ok("Logout successful (by refresh)");
+        }
+
+        return ResponseEntity.badRequest().body("유효한 토큰이 없습니다.");
     }
+
     @PostMapping("/reissue")
     public ResponseEntity<LoginResponse> reissue(@RequestHeader("Refresh-Token") String refreshToken) {
+        // ✅ Refresh 전용 검증 사용
+        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+        }
         LoginResponse response = authService.reissue(refreshToken);
         return ResponseEntity.ok(response);
     }

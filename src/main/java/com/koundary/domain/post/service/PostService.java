@@ -77,13 +77,17 @@ public class PostService {
     }
 
     private PostResponse toResponse(Post post) {
-        return new PostResponse(
-                post.getPostId(),
-                post.getBoard().getBoardCode(),
-                post.getTitle(),
-                post.getContent(),
-                post.getUser().getUserId(),
-                post.getCreatedAt()
-        );
+        return PostResponse.from(post);
     }
+
+    @Transactional(readOnly = true)
+    public List<PostResponse> getPostsByBoard(String boardCode) {
+        Board board = boardRepository.findByBoardCode(boardCode)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시판입니다"));
+
+        return postRepository.findAllByBoardOrderByCreatedAtDesc(board).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
 }

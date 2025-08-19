@@ -2,10 +2,14 @@ package com.koundary.domain.myPage.dto;
 
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+
+import java.time.LocalDateTime;
 
 @Getter
 @AllArgsConstructor
+@Builder
 public class MyPageProfileResponse {
     private Long userId;
     private String loginId;
@@ -17,5 +21,7 @@ public class MyPageProfileResponse {
     private boolean defaultProfileImage; //기본 이미지 여부
     private long postCount;
     private long commentCount;
-    private String createdAt;
+    private LocalDateTime createdAt;
+
+
 }

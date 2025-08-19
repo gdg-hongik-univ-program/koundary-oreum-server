@@ -44,6 +44,23 @@ public class MyPageService {
     @org.springframework.beans.factory.annotation.Value("${app.defaults.profile-image-url}")
     private String defaultProfileImageUrl;
 
+    @Transactional(readOnly = true)
+    public MyPageProfileResponse getMyPageProfile() {
+        User me = getCurrentUser(); // 아래 헬퍼
+        Long uid = me.getUserId();
+
+        return MyPageProfileResponse.builder()
+                .userId(uid)
+                .loginId(me.getLoginId())
+                .nickname(me.getNickname())
+                .university(me.getUniversity())
+                .universityEmail(me.getUniversityEmail())
+                .nationality(me.getNationality())
+                .profileImageUrl(me.getProfileImageUrl())
+                .createdAt(me.getCreatedAt())
+                .build();
+    }
+
     @Transactional
     public void updatePassword(UpdatePasswordRequest request) {
         User user = getCurrentUser(); // 영속성 엔티티
@@ -59,7 +76,7 @@ public class MyPageService {
         }
 
         // 새 비밀번호가 기존과 동일한지 검사
-        if (passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+        if (request.getNewPassword().equals(request.getCurrentPassword())) {
             throw new IllegalArgumentException("기존 비밀번호와 다른 새 비밀번호를 입력해주세요");
         }
         // 저장
@@ -160,12 +177,12 @@ public class MyPageService {
         return scrapRepository.findAllByUser(me, pageable)
                 .map(s -> {
                     Post p = s.getPost();
-                    String content = p.getContent() == null ? "" : p.getContent().replaceAll("\\<.*?\\>", "");
-                    String preview = content.substring(0, Math.min(100, content.length()));
+                    var b = p.getBoard();
                     return MyScrapItemResponse.builder()
                             .postId(p.getPostId())
                             .title(p.getTitle())
-                            .contentPreview(preview)
+                            .boardCode(b.getBoardCode())
+                            .boardName(b.getBoardName())
                             .scrappedAt(s.getCreatedAt())
                             .build();
                 });
@@ -178,40 +195,31 @@ public class MyPageService {
         User me =  getCurrentUser();
 
         return postRepository.findAllByUser(me, pageable)
-                .map(p -> {
-                    String raw = p.getContent() == null ? "" : p.getContent();
-                    String stripped = raw.replaceAll("\\<.*?\\>", "");
-                    String preview = stripped.substring(0, Math.min(100, stripped.length()));
-                    return MyPostItemResponse.builder()
-                            .postId(p.getPostId())
-                            .title(p.getTitle())
-                            .contentPreview(preview)
-                            .createdAt(p.getCreatedAt())
-                            .build();
-                });
+                .map(p -> MyPostItemResponse.builder()
+                        .postId(p.getPostId())
+                        .title(p.getTitle())
+                        .boardCode(p.getBoard().getBoardCode())
+                        .boardName(p.getBoard().getBoardName())
+                        .createdAt(p.getCreatedAt())
+                        .build());
     }
 
     // 댓글 단 글
     @Transactional(readOnly = true)
     public Page<MyCommentedPostItemResponse> getMyCommentedPosts(int page, int size) {
-        var pageable = PageRequest.of(page, size);
-        User me =  getCurrentUser();
+        var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "lastAt"));
+        User me = getCurrentUser();
 
         return commentRepository.findCommentedPostsWithLastTimeAndCount(me, pageable)
                 .map(row -> {
-                    Post post = row.getPost();
-                    var lastAt = row.getLastAt();
-                    long cnt = row.getCnt();
-
-                    String raw = post.getContent() == null ? "" : post.getContent();
-                    String stripped = raw.replaceAll("\\<.*?\\>", "");
-                    String preview = stripped.substring(0, Math.min(100, stripped.length()));
-
+                    Post p = row.getPost();
+                    var b = p.getBoard();
                     return  MyCommentedPostItemResponse.builder()
-                            .postId(post.getPostId())
-                            .title(post.getTitle())
-                            .contentPreview(preview)
-                            .lastCommentedAt(lastAt)
+                            .postId(p.getPostId())
+                            .title(p.getTitle())
+                            .boardCode(p.getBoard().getBoardCode())
+                            .boardName(p.getBoard().getBoardName())
+                            .lastCommentedAt(row.getLastAt())
                             .build();
                 });
     }
