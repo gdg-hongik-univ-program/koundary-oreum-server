@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 public class MyScrapItemResponse {
     private Long postId;
     private String title;
-    private String contentPreview;
+    private String boardCode;
+    private String boardName;
     private LocalDateTime scrappedAt;
 }

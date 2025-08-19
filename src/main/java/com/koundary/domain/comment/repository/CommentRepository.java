@@ -22,6 +22,10 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @EntityGraph(attributePaths = {"user"})
     List<Comment> findByParent_IdOrderByCreatedAtAsc(Long parentId);
 
+    // 댓글 단 글 조회
+    @EntityGraph(attributePaths = {"post", "post.board"})
+    Page<Comment> findAllByUser(User user, Pageable pageable);
+
     // 대댓글 개수
     int countByParent_Id(Long parentId);
 

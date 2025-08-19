@@ -5,6 +5,7 @@ import com.koundary.domain.user.entity.User;
 import com.koundary.domain.post.entity.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -20,6 +21,6 @@ public interface ScrapRepository extends JpaRepository<Scrap, Long> {
     void deleteByUserAndPost(User user, Post post);
 
     // 목록 조회
-    List<Scrap> findAllByUser(User user);
+    @EntityGraph(attributePaths = {"post", "post.board"})
     Page<Scrap> findAllByUser(User user, Pageable pageable);
 }
