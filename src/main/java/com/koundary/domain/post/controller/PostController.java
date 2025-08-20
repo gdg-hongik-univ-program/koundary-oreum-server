@@ -47,4 +47,14 @@ public class PostController {
                 boardCode, pageable.getPageNumber(), pageable.getPageSize());
         return ResponseEntity.ok(postService.getPostsByBoard(boardCode, pageable));
     }
+    // src/main/java/com/koundary/domain/post/controller/PostController.java
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostResponse> getPost(
+            @PathVariable String boardCode,
+            @PathVariable Long postId
+    ) {
+        PostResponse response = postService.getPost(boardCode, postId);
+        return ResponseEntity.ok(response);
+    }
+
 }

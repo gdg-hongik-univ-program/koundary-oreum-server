@@ -14,6 +14,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.koundary.domain.language.entity.Language;
+import com.koundary.domain.language.service.TranslationService;
+
 
 import java.util.List;
 
@@ -24,6 +27,7 @@ public class PostService {
     private final BoardRepository boardRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final TranslationService translationService;
 
     private static final String INFORMATION_BOARD_CODE = "INFORMATION";
 
@@ -97,5 +101,13 @@ public class PostService {
 
         return postRepository.findPageByBoardCode(boardCode, pageable)
                 .map(PostResponse::from);
+    }
+    @Transactional(readOnly = true)
+    public PostResponse getPost(String boardCode, Long postId) {
+        Post post = postRepository.findByPostIdAndBoard_BoardCode(postId, boardCode)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "게시글을 찾을 수 없습니다. (boardCode=%s, id=%d)".formatted(boardCode, postId)
+                ));
+        return PostResponse.from(post);
     }
 }
