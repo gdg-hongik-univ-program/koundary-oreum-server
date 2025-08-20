@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-
 @RestController
 @RequestMapping("/mypage")
 @RequiredArgsConstructor
@@ -59,7 +58,7 @@ public class MyPageController {
     @GetMapping("/scraps")
     public ResponseEntity<PageResponse<MyScrapItemResponse>> getMyScraps(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "12") int size
     ) {
         var result = myPageService.getMyScraps(page, size);
         return ResponseEntity.ok(new PageResponse<>(result));
@@ -68,7 +67,7 @@ public class MyPageController {
     @GetMapping("/posts")
     public ResponseEntity<PageResponse<MyPostItemResponse>> getPosts(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "12") int size
     ) {
         var result = myPageService.getMyPosts(page, size);
         return ResponseEntity.ok(new PageResponse<>(result));
@@ -77,7 +76,7 @@ public class MyPageController {
     @GetMapping("/commented-posts")
     public ResponseEntity<PageResponse<MyCommentedPostItemResponse>> getCommentedPosts(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "12") int size
     ) {
         var result = myPageService.getMyCommentedPosts(page, size);
         return ResponseEntity.ok(new PageResponse<>(result));
