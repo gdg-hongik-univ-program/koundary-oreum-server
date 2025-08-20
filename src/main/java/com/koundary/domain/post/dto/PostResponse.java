@@ -3,6 +3,8 @@ package com.koundary.domain.post.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.koundary.domain.post.entity.Post;
+
 public record PostResponse(
         Long postId,
         String boardCode,
@@ -14,7 +16,7 @@ public record PostResponse(
         List<String> imageUrls,   // 게시글 이미지 URL 리스트
         LocalDateTime createdAt
 ) {
-    public static PostResponse from(com.koundary.domain.post.entity.Post post) {
+    public static PostResponse from(Post post) {
         return new PostResponse(
                 post.getPostId(),
                 post.getBoard().getBoardCode(),

@@ -2,14 +2,16 @@ package com.koundary.domain.post.service;
 
 import com.koundary.domain.board.entity.Board;
 import com.koundary.domain.board.repository.BoardRepository;
-import com.koundary.domain.post.entity.Image;
 import com.koundary.domain.post.dto.PostCreateRequest;
 import com.koundary.domain.post.dto.PostResponse;
+import com.koundary.domain.post.entity.Image;
 import com.koundary.domain.post.entity.Post;
 import com.koundary.domain.post.repository.PostRepository;
 import com.koundary.domain.user.entity.User;
 import com.koundary.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +35,7 @@ public class PostService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다"));
 
-        // 1. 일반 게시판 + 정보글 체크된 경우 → 게시글 2개 저장
+        // 일반 게시판 + 정보글 체크 → 정보게시판에도 복사
         if (!INFORMATION_BOARD_CODE.equals(boardCode) && Boolean.TRUE.equals(request.isInformation())) {
             Board infoBoard = boardRepository.findByBoardCode(INFORMATION_BOARD_CODE)
                     .orElseThrow(() -> new IllegalStateException("정보게시판이 존재하지 않습니다"));
@@ -44,14 +46,13 @@ public class PostService {
             postRepository.save(original);
             postRepository.save(copy);
 
-            return toResponse(original);
+            return PostResponse.from(original);
         }
 
-        // 2. 일반 게시판 or 정보게시판 (isInformation 무시)
+        // 단일 저장
         Post post = buildPost(request, board, user, false);
         postRepository.save(post);
-
-        return toResponse(post);
+        return PostResponse.from(post);
     }
 
     private Post buildPost(PostCreateRequest req, Board board, User user, boolean forceInformation) {
@@ -72,22 +73,28 @@ public class PostService {
                 post.getImages().add(image);
             }
         }
-
         return post;
     }
 
-    private PostResponse toResponse(Post post) {
-        return PostResponse.from(post);
-    }
-
+    // 기존 리스트 반환 (호환)
     @Transactional(readOnly = true)
     public List<PostResponse> getPostsByBoard(String boardCode) {
         Board board = boardRepository.findByBoardCode(boardCode)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시판입니다"));
 
         return postRepository.findAllByBoardOrderByCreatedAtDesc(board).stream()
-                .map(this::toResponse)
+                .map(PostResponse::from)
                 .toList();
     }
 
+    // ✅ 페이징 버전 (스프링 Page로 반환)
+    @Transactional(readOnly = true)
+    public Page<PostResponse> getPostsByBoard(String boardCode, Pageable pageable) {
+        // 존재 여부 검증
+        boardRepository.findByBoardCode(boardCode)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시판입니다"));
+
+        return postRepository.findPageByBoardCode(boardCode, pageable)
+                .map(PostResponse::from);
+    }
 }
