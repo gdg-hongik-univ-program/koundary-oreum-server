@@ -2,6 +2,7 @@ package com.koundary.domain.post.controller;
 
 import com.koundary.domain.post.dto.PostCreateRequest;
 import com.koundary.domain.post.dto.PostResponse;
+import com.koundary.domain.post.dto.PostUpdateRequest;
 import com.koundary.domain.post.service.PostService;
 import com.koundary.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -56,5 +57,32 @@ public class PostController {
         PostResponse response = postService.getPost(boardCode, postId);
         return ResponseEntity.ok(response);
     }
+    // ✅ 게시글 수정 (원본/복사본 동시 처리)
+    @PatchMapping("/{postId}")
+    public ResponseEntity<PostResponse> updatePost(
+            @PathVariable String boardCode,
+            @PathVariable Long postId,
+            @RequestBody PostUpdateRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        log.info("✏️ 게시글 수정: boardCode={}, postId={}, userId={}",
+                boardCode, postId, userDetails.getUserId());
+        Long userId = userDetails.getUserId();
+        PostResponse updated = postService.updatePost(boardCode, postId, request, userId);
+        return ResponseEntity.ok(updated);
+    }
 
+    // ✅ 게시글 삭제 (세트 동시 삭제)
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<Void> deletePost(
+            @PathVariable String boardCode,
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        log.info("🗑️ 게시글 삭제: boardCode={}, postId={}, userId={}",
+                boardCode, postId, userDetails.getUserId());
+        Long userId = userDetails.getUserId();
+        postService.deletePost(boardCode, postId, userId);
+        return ResponseEntity.noContent().build();
+    }
 }

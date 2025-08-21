@@ -40,4 +40,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         order by p.createdAt desc
     """)
     Page<Post> findPageByBoardCode(@Param("boardCode") String boardCode, Pageable pageable);
+
+    // ✅ groupKey로 두 글(원본/복사) 함께 가져오기
+    @EntityGraph(attributePaths = {"images", "user", "board"})
+    List<Post> findAllByGroupKey(String groupKey);
 }

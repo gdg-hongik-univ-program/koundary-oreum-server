@@ -32,6 +32,10 @@ public class Post {
 
     private boolean isInformation;
 
+    // ✅ 원본/복사본을 묶는 키 (둘 다 동일한 값)
+    @Column(length = 36)
+    private String groupKey;
+
     // 게시판
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id")
@@ -81,5 +85,21 @@ public class Post {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public void setGroupKey(String groupKey) { this.groupKey = groupKey; }
+
+    // ✅ 업데이트용 편의 메서드
+    public void updateContent(String title, String content, boolean isInformation) {
+        if (title != null) this.title = title;
+        if (content != null) this.content = content;
+        this.isInformation = isInformation;
+    }
+
+    public void replaceImages(List<Image> newImages) {
+        this.images.clear();
+        if (newImages != null) {
+            this.images.addAll(newImages);
+        }
     }
 }
