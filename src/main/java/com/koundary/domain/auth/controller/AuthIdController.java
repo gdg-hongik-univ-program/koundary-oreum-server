@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("auth/find-loginId")
+@RequestMapping("/auth/find-loginId")
 public class AuthIdController {
 
     private final VerificationService verificationService;
