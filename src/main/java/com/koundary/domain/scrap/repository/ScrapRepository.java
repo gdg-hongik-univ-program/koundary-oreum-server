@@ -17,8 +17,12 @@ public interface ScrapRepository extends JpaRepository<Scrap, Long> {
     Optional<Scrap> findByUserAndPost(User user, Post post);
     boolean existsByUserAndPost(User user, Post post);
 
+    Optional<Scrap> findByPost_PostIdAndUser_UserId(Long postId, Long userId);
+    boolean existsByPost_PostIdAndUser_UserId(Long postId, Long userId);
+
     // 삭제
     void deleteByUserAndPost(User user, Post post);
+    void deleteByPost_PostIdAndUser_UserId(Long postId, Long userId);
 
     // 목록 조회
     @EntityGraph(attributePaths = {"post", "post.board"})

@@ -36,6 +36,15 @@ public class Post {
     @Column(length = 36)
     private String groupKey;
 
+    // ✅ 스크랩 수 (기본값 0)
+    @Column(nullable = false)
+    private int scrapCount = 0;
+
+    // ✅ 낙관적 잠금(동시성 보호)
+    @Version
+    private Long version;
+
+
     // 게시판
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id")
@@ -100,6 +109,17 @@ public class Post {
         this.images.clear();
         if (newImages != null) {
             this.images.addAll(newImages);
+        }
+    }
+
+    // ✅ 스크랩 수 증감 편의 메서드
+    public void increaseScrapCount() {
+        this.scrapCount++;
+    }
+
+    public void decreaseScrapCount() {
+        if (this.scrapCount > 0) {
+            this.scrapCount--;
         }
     }
 }
