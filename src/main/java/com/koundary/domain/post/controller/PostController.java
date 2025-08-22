@@ -4,6 +4,7 @@ import com.koundary.domain.post.dto.PostCreateRequest;
 import com.koundary.domain.post.dto.PostResponse;
 import com.koundary.domain.post.dto.PostUpdateRequest;
 import com.koundary.domain.post.service.PostService;
+import com.koundary.global.dto.PageResponse;
 import com.koundary.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,10 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+import static org.apache.logging.log4j.util.StringBuilders.equalsIgnoreCase;
 
 @Slf4j
 @RestController

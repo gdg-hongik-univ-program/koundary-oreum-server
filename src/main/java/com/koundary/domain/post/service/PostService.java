@@ -2,6 +2,7 @@ package com.koundary.domain.post.service;
 
 import com.koundary.domain.board.entity.Board;
 import com.koundary.domain.board.repository.BoardRepository;
+import com.koundary.domain.post.entity.Image;
 import com.koundary.domain.post.dto.PostCreateRequest;
 import com.koundary.domain.post.dto.PostResponse;
 import com.koundary.domain.post.dto.PostUpdateRequest;
@@ -31,7 +32,6 @@ public class PostService {
     private final BoardRepository boardRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final TranslationService translationService;
 
     private static final String INFORMATION_BOARD_CODE = "INFORMATION";
 

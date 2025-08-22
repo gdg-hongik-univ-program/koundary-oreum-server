@@ -1,15 +1,14 @@
 package com.koundary.domain.myPage.service;
 
+import com.koundary.domain.myPage.dto.UpdatePasswordRequest;
 import com.koundary.domain.auth.repository.RefreshTokenRepository;
 import com.koundary.domain.comment.repository.CommentRepository;
 import com.koundary.domain.myPage.dto.*;
 import com.koundary.domain.post.entity.Post;
 import com.koundary.domain.post.repository.PostRepository;
-import com.koundary.domain.scrap.dto.ScrapMessageResponse;
 import com.koundary.domain.scrap.repository.ScrapRepository;
 import com.koundary.domain.user.entity.User;
 import com.koundary.domain.user.repository.UserRepository;
-import com.koundary.domain.user.service.UserService;
 import com.koundary.domain.verification.repository.VerificationRepository;
 import com.koundary.global.security.CustomUserDetails;
 import com.koundary.global.util.S3Uploader;
@@ -19,14 +18,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.parameters.P;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -160,9 +155,11 @@ public class MyPageService {
         }
 
         Object principal = auth.getPrincipal();
+
         if (principal instanceof CustomUserDetails customUserDetails) {
             return customUserDetails.getUser();
         }
+
         throw new IllegalStateException("인증된 사용자 정보를 찾을 수 없습니다.");
     }
 

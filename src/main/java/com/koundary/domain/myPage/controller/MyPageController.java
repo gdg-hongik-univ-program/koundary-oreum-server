@@ -1,18 +1,17 @@
 package com.koundary.domain.myPage.controller;
 
+import com.koundary.domain.myPage.dto.UpdatePasswordRequest;
 import com.koundary.domain.myPage.dto.*;
 import com.koundary.domain.myPage.service.MyPageService;
-import com.koundary.domain.post.entity.Post;
 import com.koundary.global.dto.PageResponse;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+
 
 @RestController
 @RequestMapping("/mypage")
