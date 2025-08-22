@@ -1,5 +1,6 @@
 package com.koundary.domain.user.service;
 
+import com.koundary.domain.auth.service.PasswordPolicyService;
 import com.koundary.domain.user.dto.signup.CheckAvailablityResponse;
 import com.koundary.domain.user.dto.signup.CheckLoginIdRequest;
 import com.koundary.domain.user.dto.signup.CheckNicknameRequest;
@@ -21,6 +22,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final VerificationService VerificationService;
+    private final PasswordPolicyService  passwordPolicyService;
 
     @Value("${app.defaults.profile-image-url}")
     private String defaultProfileImageUrl;
@@ -61,7 +63,9 @@ public class UserService {
                 .profileImageUrl(defaultProfileImageUrl)
                 .build();
 
-        userRepository.save(user);
+        User saved = userRepository.save(user);
+
+        passwordPolicyService.recordNewPassword(saved, encodedPassword);
     }
 
     public CheckAvailablityResponse checkLoginIdDuplicate(CheckLoginIdRequest dto) {

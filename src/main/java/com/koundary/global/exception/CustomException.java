@@ -1,4 +1,4 @@
-package com.koundary.global.expection;
+package com.koundary.global.exception;
 
 public class CustomException extends RuntimeException {
     public CustomException(String message) {

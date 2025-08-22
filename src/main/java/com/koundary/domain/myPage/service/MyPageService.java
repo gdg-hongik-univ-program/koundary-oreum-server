@@ -1,5 +1,6 @@
 package com.koundary.domain.myPage.service;
 
+import com.koundary.domain.auth.service.PasswordPolicyService;
 import com.koundary.domain.myPage.dto.UpdatePasswordRequest;
 import com.koundary.domain.auth.repository.RefreshTokenRepository;
 import com.koundary.domain.comment.repository.CommentRepository;
@@ -35,6 +36,7 @@ public class MyPageService {
     private final S3Uploader s3Uploader;
     private final VerificationRepository verificationRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final PasswordPolicyService passwordPolicyService;
 
     @org.springframework.beans.factory.annotation.Value("${app.defaults.profile-image-url}")
     private String defaultProfileImageUrl;
@@ -71,11 +73,11 @@ public class MyPageService {
         }
 
         // 새 비밀번호가 기존과 동일한지 검사
-        if (request.getNewPassword().equals(request.getCurrentPassword())) {
-            throw new IllegalArgumentException("기존 비밀번호와 다른 새 비밀번호를 입력해주세요");
-        }
+        passwordPolicyService.validateNotReused(user, request.getNewPassword());
+
         // 저장
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        String encoded = passwordEncoder.encode(request.getNewPassword());
+        user.setPassword(encoded);
         userRepository.save(user);
     }
 

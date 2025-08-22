@@ -3,6 +3,7 @@ package com.koundary.domain.myPage.controller;
 import com.koundary.domain.myPage.dto.UpdatePasswordRequest;
 import com.koundary.domain.myPage.dto.*;
 import com.koundary.domain.myPage.service.MyPageService;
+import com.koundary.global.dto.MessageResponse;
 import com.koundary.global.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -26,10 +27,10 @@ public class MyPageController {
          return ResponseEntity.ok(profile);
     }
 
-    @PutMapping("/password")
-    public ResponseEntity<MyPageMessageResponse> updatePassword(@RequestBody UpdatePasswordRequest request) {
+    @PostMapping("/password")
+    public ResponseEntity<MessageResponse> updatePassword(@RequestBody UpdatePasswordRequest request) {
         myPageService.updatePassword(request);
-        return ResponseEntity.ok(new MyPageMessageResponse("비밀번호가 변경되었습니다."));
+        return ResponseEntity.ok(new MessageResponse("비밀번호가 변경되었습니다."));
     }
 
     @PutMapping(

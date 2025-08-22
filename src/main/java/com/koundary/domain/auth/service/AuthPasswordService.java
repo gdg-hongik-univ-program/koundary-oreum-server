@@ -5,6 +5,7 @@ import com.koundary.domain.auth.repository.PasswordResetTokenRepository;
 import com.koundary.domain.auth.repository.RefreshTokenRepository;
 import com.koundary.domain.user.entity.User;
 import com.koundary.domain.user.repository.UserRepository;
+import com.koundary.global.exception.BadRequestException;
 import com.koundary.global.util.TokenUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.MailSender;
@@ -18,7 +19,6 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class AuthPasswordService {
-
     private static final int EXPIRE_MIN = 30;
 
     private final UserRepository userRepository;
@@ -26,6 +26,7 @@ public class AuthPasswordService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailSender mailSender;
+    private final PasswordPolicyService passwordPolicyService;
 
     /** 비밀번호 재설정 토큰 발급 */
     @Transactional
@@ -37,7 +38,7 @@ public class AuthPasswordService {
             PasswordResetToken token = PasswordResetToken.issue(user.getUserId(), hash, EXPIRE_MIN, ip, ua);
             passwordResetTokenRepository.save(token);
 
-            String link = "http://localhost:5173/resetconfirm?token=" +raw;
+            String link = "http://localhost:5173/resetconfirm?token=" + raw;
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(universityEmail);
             message.setSubject("[Koundary] 비밀번호 재설정");
@@ -52,20 +53,31 @@ public class AuthPasswordService {
     @Transactional
     public void resetPasswordWithToken(String rawToken, String newPw, String confirmPw) {
         if (newPw == null || newPw.equals(confirmPw))
-            throw new IllegalArgumentException("비밀번호 확인이 일치하지 않습니다.");
+            throw new BadRequestException("비밀번호 확인이 일치하지 않습니다.");
+
         String hash = TokenUtil.sha256Base64(rawToken);
         var token = passwordResetTokenRepository.findValidByHash(hash, LocalDateTime.now())
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 토큰입니다."));
-        User user = userRepository.findById(token.getUserId()).orElseThrow();
-        applyNewPassword(user, newPw);
-        token.markUsed();
-        // flush는 트랜잭션 종료 시점에 반영
-    }
+                .orElseThrow(() -> new BadRequestException("유효하지 않은 토큰입니다."));
 
-    private void applyNewPassword(User user, String rawNewPw) {
-        user.setPassword(passwordEncoder.encode(rawNewPw));
+        User user = userRepository.findById(token.getUserId()).orElseThrow();
+
+        // 🔒 재사용 금지 검증
+        passwordPolicyService.validateNotReused(user, newPw);
+
+        // 저장
+        String encoded = passwordEncoder.encode(newPw);
+        user.setPassword(encoded);
         userRepository.save(user);
+
+        // 📌 이력 기록
+        passwordPolicyService.recordNewPassword(user, encoded);
+
+        // 기존 리프레시 토큰 무효화
         refreshTokenRepository.deleteByUserId(user.getUserId());
+
+        // 토큰 사용 처리
+        token.markUsed();
+        // flush는 트랜잭션 종료 시 자동 반영
     }
 
     @Transactional(readOnly = true)
