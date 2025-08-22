@@ -10,6 +10,10 @@ import com.koundary.domain.post.repository.PostRepository;
 import com.koundary.domain.user.entity.User;
 import com.koundary.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -90,4 +94,31 @@ public class PostService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<PostResponse> getMyPostsByBoard(String boardCode, Long userId) {
+        User me = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다. id=" + userId));
+
+        var sort = Sort.by(Sort.Direction.DESC, "createdAt");
+
+        if ("NATIONALITY".equalsIgnoreCase(boardCode)) {
+            String nation = me.getNationality();
+            requireNotBlank(nation, "회원 프로필에 국가 정보가 없습니다. 마이페이지에서 국가를 설정해주세요.");
+            return postRepository.findAllByBoard_BoardCodeAndUser_Nationality("NATIONALITY", nation, sort)
+                    .stream().map(PostResponse::from).toList();
+        }
+        if ("UNIVERSITY".equalsIgnoreCase(boardCode)) {
+            String univ = me.getUniversity();
+            requireNotBlank(univ, "회원 프로필에 학교 정보가 없습니다. 마이페이지에서 학교를 설정해주세요.");
+            return postRepository.findAllByBoard_BoardCodeAndUser_University("UNIVERSITY", univ, sort)
+                    .stream().map(PostResponse::from).toList();
+        }
+        throw new IllegalArgumentException("지원하지 않는 보드 코드입니다: " + boardCode);
+    }
+
+    private void requireNotBlank(String value, String message) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalStateException(message);
+        }
+    }
 }
