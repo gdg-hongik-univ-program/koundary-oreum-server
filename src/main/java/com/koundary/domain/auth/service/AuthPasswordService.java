@@ -37,7 +37,7 @@ public class AuthPasswordService {
             PasswordResetToken token = PasswordResetToken.issue(user.getUserId(), hash, EXPIRE_MIN, ip, ua);
             passwordResetTokenRepository.save(token);
 
-            String link = "http://localhost:5173/reset-password?token=" +raw;
+            String link = "https://your-frontend/reset-password?token=" +raw;
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(universityEmail);
             message.setSubject("[Koundary] 비밀번호 재설정");
@@ -68,4 +68,25 @@ public class AuthPasswordService {
         refreshTokenRepository.deleteByUserId(user.getUserId());
     }
 
+    @Transactional(readOnly = true)
+    public void sendLoginIdByEmail(String universityEmail) {
+        userRepository.findByUniversityEmail(universityEmail).ifPresent(user -> {
+            String loginId = user.getLoginId();
+            String body = """
+                    요청하신 계정의 로그인 아이디는 다음과 같습니다:
+
+                    %s
+
+                    감사합니다.
+                    """.formatted(loginId);
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(universityEmail);
+            message.setSubject("[Koundary] 아이디 안내");
+            message.setText(body);
+
+            mailSender.send(message);
+        });
+        // 계정 존재 여부와 상관없이 컨트롤러 응답은 동일해야 함
+    }
 }
