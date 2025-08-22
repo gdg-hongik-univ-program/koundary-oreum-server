@@ -44,4 +44,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // ✅ groupKey로 두 글(원본/복사) 함께 가져오기
     @EntityGraph(attributePaths = {"images", "user", "board"})
     List<Post> findAllByGroupKey(String groupKey);
+
+    @EntityGraph(attributePaths = {"board", "user", "images"})
+    Page<Post> findByBoard_BoardCode(String boardCode, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"board", "user", "images"})
+    Page<Post> findByBoard_BoardCodeAndUser_Nationality(String boardCode, String nationality, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"board", "user", "images"})
+    Page<Post> findByBoard_BoardCodeAndUser_University(String boardCode, String university, Pageable pageable);
 }

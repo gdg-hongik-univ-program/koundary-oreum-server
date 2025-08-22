@@ -43,7 +43,7 @@ public class PostController {
     }
 
     // ✅ 게시글 목록 페이징 조회 (12개/페이지, 최신순)
-    @GetMapping
+    /*@GetMapping
     public ResponseEntity<Page<PostResponse>> getPosts(
             @PathVariable String boardCode,
             @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC)
@@ -53,6 +53,34 @@ public class PostController {
                 boardCode, pageable.getPageNumber(), pageable.getPageSize());
         return ResponseEntity.ok(postService.getPostsByBoard(boardCode, pageable));
     }
+
+     */
+
+    @GetMapping
+    public ResponseEntity<Page<PostResponse>> getPosts(
+            @PathVariable String boardCode,
+            @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        log.info("📄 게시글 목록 조회: boardCode={}, page={}, size={}",
+                boardCode, pageable.getPageNumber(), pageable.getPageSize());
+
+        // NATIONALITY/UNIVERSITY는 로그인 사용자 기준으로 필터링
+        if ("NATIONALITY".equalsIgnoreCase(boardCode) || "UNIVERSITY".equalsIgnoreCase(boardCode)) {
+            if (userDetails == null) {
+                // 401로 처리하고 싶으면 커스텀 예외 + @ControllerAdvice 사용
+                throw new IllegalStateException("로그인이 필요합니다.");
+            }
+            Page<PostResponse> mine = postService.getMyPostsByBoard(boardCode, userDetails.getUserId(), pageable);
+            return ResponseEntity.ok(mine);
+        }
+
+        // 그 외 보드는 전체 노출
+        Page<PostResponse> all = postService.getPostsByBoard(boardCode, pageable);
+        return ResponseEntity.ok(all);
+    }
+
     // src/main/java/com/koundary/domain/post/controller/PostController.java
     @GetMapping("/{postId}")
     public ResponseEntity<PostResponse> getPost(

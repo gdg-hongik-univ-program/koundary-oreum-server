@@ -77,4 +77,10 @@ public class UserService {
                 ? new CheckAvailablityResponse(false, "이미 사용중인 닉네임입니다.")
                 : new CheckAvailablityResponse(true, "사용 가능한 닉네임입니다.");
     }
+
+    public String findUsernameByEmail(String email) {
+        return userRepository.findByUniversityEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("해당 이메일로 가입된 계정이 없습니다."))
+                .getLoginId();
+    }
 }

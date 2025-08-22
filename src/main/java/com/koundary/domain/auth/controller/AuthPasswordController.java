@@ -10,13 +10,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/auth/reset-password")
 @RequiredArgsConstructor
 public class AuthPasswordController {
 
     private final AuthPasswordService authPasswordService;
 
-    @PostMapping("/reset-password/request")
+    @PostMapping("/request")
     public ResponseEntity<MessageResponse> request(@RequestBody ResetRequest req,
                                                    @RequestHeader(value = "X-Real-IP", required = false) String realIp,
                                                    @RequestHeader(value = "CF-Connecting-IP", required = false) String cfIp,
@@ -28,7 +28,7 @@ public class AuthPasswordController {
         return ResponseEntity.ok(new MessageResponse("재설정 링크를 메일로 보냈습니다."));
     }
 
-    @PostMapping("/reset-password/confirm")
+    @PostMapping("/confirm")
     public ResponseEntity<MessageResponse> confirm(@RequestBody ResetConfirmRequest req) {
         authPasswordService.resetPasswordWithToken(req.getToken(), req.getNewPassword(), req.getConfirmPassword());
         return ResponseEntity.ok(new MessageResponse("비밀번호가 변경되었습니다."));
@@ -39,9 +39,4 @@ public class AuthPasswordController {
         return null;
     }
 
-    @PostMapping("/find-id")
-    public ResponseEntity<MessageResponse> findId(@RequestBody FindIdRequest req) {
-        authPasswordService.sendLoginIdByEmail(req.getUniversityEmail());
-        return ResponseEntity.ok(new MessageResponse("입력하신 메일로 아이디 안내를 보냈습니다."));
-    }
 }

@@ -111,6 +111,33 @@ public class PostService {
         return postRepository.findPageByBoardCode(boardCode, pageable)
                 .map(PostResponse::from);
     }
+
+    @Transactional(readOnly = true)
+    public Page<PostResponse> getMyPostsByBoard(String boardCode, Long userId, Pageable pageable) {
+        User me = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다. id=" + userId));
+
+        if ("NATIONALITY".equalsIgnoreCase(boardCode)) {
+            String nation = me.getNationality();
+            if (nation == null || nation.trim().isEmpty()) {
+                throw new IllegalStateException("회원 프로필에 국가 정보가 없습니다. 마이페이지에서 국가를 설정해주세요.");
+            }
+            return postRepository.findByBoard_BoardCodeAndUser_Nationality("NATIONALITY", nation, pageable)
+                    .map(PostResponse::from);
+        }
+
+        if ("UNIVERSITY".equalsIgnoreCase(boardCode)) {
+            String univ = me.getUniversity();
+            if (univ == null || univ.trim().isEmpty()) {
+                throw new IllegalStateException("회원 프로필에 학교 정보가 없습니다. 마이페이지에서 학교를 설정해주세요.");
+            }
+            return postRepository.findByBoard_BoardCodeAndUser_University("UNIVERSITY", univ, pageable)
+                    .map(PostResponse::from);
+        }
+
+        throw new IllegalArgumentException("지원하지 않는 보드 코드입니다: " + boardCode);
+    }
+
     @Transactional(readOnly = true)
     public PostResponse getPost(String boardCode, Long postId) {
         Post post = postRepository.findByPostIdAndBoard_BoardCode(postId, boardCode)
