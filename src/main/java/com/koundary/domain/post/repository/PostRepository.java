@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -53,4 +54,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @EntityGraph(attributePaths = {"board", "user", "images"})
     Page<Post> findByBoard_BoardCodeAndUser_University(String boardCode, String university, Pageable pageable);
+
+    // =========================================
+    // ✅ 스크랩 수 증감 (단일 게시글)
+    // =========================================
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Post p set p.scrapCount = p.scrapCount + :delta where p.postId = :postId")
+    int updateScrapCount(@Param("postId") Long postId, @Param("delta") int delta);
+
+    // =========================================
+    // ✅ 스크랩 수 증감 (groupKey로 원본/복제 일괄 반영)
+    // =========================================
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Post p set p.scrapCount = p.scrapCount + :delta where p.groupKey = :groupKey")
+    int updateScrapCountByGroupKey(@Param("groupKey") String groupKey, @Param("delta") int delta);
 }
