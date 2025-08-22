@@ -31,7 +31,6 @@ public class ScrapController {
     // 기존 프론트가 POST/DELETE를 호출해도 동작하도록 토글로 위임
     // ---------------------------
 
-    /** @deprecated 토글 방식으로 전환: POST /posts/{id}/scrap/toggle 사용 권장 */
     @Deprecated
     @PostMapping
     public ResponseEntity<ScrapMessageResponse> createScrap(@PathVariable Long postId) {
@@ -40,7 +39,6 @@ public class ScrapController {
         return ResponseEntity.ok(new ScrapMessageResponse(msg));
     }
 
-    /** @deprecated 토글 방식으로 전환: POST /posts/{id}/scrap/toggle 사용 권장 */
     @Deprecated
     @DeleteMapping
     public ResponseEntity<ScrapMessageResponse> deleteScrap(@PathVariable Long postId) {

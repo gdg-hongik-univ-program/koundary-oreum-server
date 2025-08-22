@@ -4,7 +4,6 @@ import com.koundary.domain.post.dto.PostCreateRequest;
 import com.koundary.domain.post.dto.PostResponse;
 import com.koundary.domain.post.dto.PostUpdateRequest;
 import com.koundary.domain.post.service.PostService;
-import com.koundary.global.dto.PageResponse;
 import com.koundary.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,10 +14,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
-import static org.apache.logging.log4j.util.StringBuilders.equalsIgnoreCase;
 
 @Slf4j
 @RestController
@@ -43,19 +38,6 @@ public class PostController {
     }
 
     // ✅ 게시글 목록 페이징 조회 (12개/페이지, 최신순)
-    /*@GetMapping
-    public ResponseEntity<Page<PostResponse>> getPosts(
-            @PathVariable String boardCode,
-            @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC)
-            Pageable pageable
-    ) {
-        log.info("📄 게시글 목록 조회: boardCode={}, page={}, size={}",
-                boardCode, pageable.getPageNumber(), pageable.getPageSize());
-        return ResponseEntity.ok(postService.getPostsByBoard(boardCode, pageable));
-    }
-
-     */
-
     @GetMapping
     public ResponseEntity<Page<PostResponse>> getPosts(
             @PathVariable String boardCode,
@@ -66,30 +48,35 @@ public class PostController {
         log.info("📄 게시글 목록 조회: boardCode={}, page={}, size={}",
                 boardCode, pageable.getPageNumber(), pageable.getPageSize());
 
+        Long viewerUserId = (userDetails != null) ? userDetails.getUserId() : null;
+
         // NATIONALITY/UNIVERSITY는 로그인 사용자 기준으로 필터링
         if ("NATIONALITY".equalsIgnoreCase(boardCode) || "UNIVERSITY".equalsIgnoreCase(boardCode)) {
-            if (userDetails == null) {
-                // 401로 처리하고 싶으면 커스텀 예외 + @ControllerAdvice 사용
+            if (viewerUserId == null) {
+                // 401로 처리하려면 @ControllerAdvice에서 AuthenticationException으로 매핑
                 throw new IllegalStateException("로그인이 필요합니다.");
             }
-            Page<PostResponse> mine = postService.getMyPostsByBoard(boardCode, userDetails.getUserId(), pageable);
+            Page<PostResponse> mine = postService.getMyPostsByBoard(boardCode, viewerUserId, pageable);
             return ResponseEntity.ok(mine);
         }
 
-        // 그 외 보드는 전체 노출
-        Page<PostResponse> all = postService.getPostsByBoard(boardCode, pageable);
+        // 그 외 보드는 전체 노출 + viewerUserId로 isScrapped 채움
+        Page<PostResponse> all = postService.getPostsByBoard(boardCode, pageable, viewerUserId);
         return ResponseEntity.ok(all);
     }
 
-    // src/main/java/com/koundary/domain/post/controller/PostController.java
+    // ✅ 게시글 상세 (viewerUserId로 isScrapped 채움)
     @GetMapping("/{postId}")
     public ResponseEntity<PostResponse> getPost(
             @PathVariable String boardCode,
-            @PathVariable Long postId
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        PostResponse response = postService.getPost(boardCode, postId);
+        Long viewerUserId = (userDetails != null) ? userDetails.getUserId() : null;
+        PostResponse response = postService.getPost(boardCode, postId, viewerUserId);
         return ResponseEntity.ok(response);
     }
+
     // ✅ 게시글 수정 (원본/복사본 동시 처리)
     @PatchMapping("/{postId}")
     public ResponseEntity<PostResponse> updatePost(
