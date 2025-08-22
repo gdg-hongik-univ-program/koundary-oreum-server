@@ -37,7 +37,7 @@ public class AuthPasswordService {
             PasswordResetToken token = PasswordResetToken.issue(user.getUserId(), hash, EXPIRE_MIN, ip, ua);
             passwordResetTokenRepository.save(token);
 
-            String link = "https://your-frontend/reset-password?token=" +raw;
+            String link = "http://localhost:5173/resetconfirm?token=" +raw;
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(universityEmail);
             message.setSubject("[Koundary] 비밀번호 재설정");
