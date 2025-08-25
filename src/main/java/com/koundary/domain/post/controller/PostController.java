@@ -11,9 +11,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -23,18 +27,38 @@ public class PostController {
 
     private final PostService postService;
 
-    // 게시글 작성
-    @PostMapping
+    // =========================
+    // 생성 - JSON 전용 (기존)
+    // =========================
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> createPost(
             @PathVariable String boardCode,
             @RequestBody PostCreateRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        log.info("📨 게시글 작성 요청: boardCode={}, title={}, userId={}",
+        log.info("📨 게시글 작성(JSON): boardCode={}, title={}, userId={}",
                 boardCode, request.title(), userDetails.getUserId());
 
         Long userId = userDetails.getUserId();
         return ResponseEntity.ok(postService.createPost(boardCode, request, userId));
+    }
+
+    // =========================
+    // 생성 - 멀티파트(JSON + files)
+    // =========================
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostResponse> createPostWithFiles(
+            @PathVariable String boardCode,
+            @RequestPart("data") PostCreateRequest request,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUserId();
+        log.info("📨 게시글 작성(MULTIPART): boardCode={}, title={}, userId={}, files={}",
+                boardCode, request.title(), userId, images == null ? 0 : images.size());
+
+        PostResponse res = postService.createPostWithFiles(boardCode, request, userId, images);
+        return ResponseEntity.ok(res);
     }
 
     // ✅ 게시글 목록 페이징 조회 (12개/페이지, 최신순)
@@ -53,7 +77,6 @@ public class PostController {
         // NATIONALITY/UNIVERSITY는 로그인 사용자 기준으로 필터링
         if ("NATIONALITY".equalsIgnoreCase(boardCode) || "UNIVERSITY".equalsIgnoreCase(boardCode)) {
             if (viewerUserId == null) {
-                // 401로 처리하려면 @ControllerAdvice에서 AuthenticationException으로 매핑
                 throw new IllegalStateException("로그인이 필요합니다.");
             }
             Page<PostResponse> mine = postService.getMyPostsByBoard(boardCode, viewerUserId, pageable);
@@ -77,19 +100,40 @@ public class PostController {
         return ResponseEntity.ok(response);
     }
 
-    // ✅ 게시글 수정 (원본/복사본 동시 처리)
-    @PatchMapping("/{postId}")
+    // =========================
+    // 수정 - JSON 전용 (기존)
+    // =========================
+    @PatchMapping(value = "/{postId}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> updatePost(
             @PathVariable String boardCode,
             @PathVariable Long postId,
             @RequestBody PostUpdateRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        log.info("✏️ 게시글 수정: boardCode={}, postId={}, userId={}",
+        log.info("게시글 수정(JSON): boardCode={}, postId={}, userId={}",
                 boardCode, postId, userDetails.getUserId());
         Long userId = userDetails.getUserId();
         PostResponse updated = postService.updatePost(boardCode, postId, request, userId);
         return ResponseEntity.ok(updated);
+    }
+
+    // =========================
+    // 수정 - 멀티파트(JSON + files)
+    // =========================
+    @PatchMapping(value = "/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostResponse> updatePostWithFiles(
+            @PathVariable String boardCode,
+            @PathVariable Long postId,
+            @RequestPart("data") PostUpdateRequest request,
+            @RequestPart(value = "images", required = false) List<MultipartFile> newImages,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUserId();
+        log.info("게시글 수정(MULTIPART): boardCode={}, postId={}, userId={}, files={}",
+                boardCode, postId, userId, newImages == null ? 0 : newImages.size());
+
+        PostResponse res = postService.updatePostWithFiles(boardCode, postId, request, userId, newImages);
+        return ResponseEntity.ok(res);
     }
 
     // ✅ 게시글 삭제 (세트 동시 삭제)

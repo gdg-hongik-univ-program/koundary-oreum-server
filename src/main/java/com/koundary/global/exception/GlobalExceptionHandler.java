@@ -1,4 +1,3 @@
-// ✅ 패키지 오타 주의: com.koundary.global.exception
 package com.koundary.global.exception;
 
 import jakarta.validation.ConstraintViolationException;
