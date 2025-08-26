@@ -5,6 +5,9 @@ import com.koundary.domain.comment.dto.CommentResponse;
 import com.koundary.domain.comment.dto.CommentUpdateRequest;
 import com.koundary.domain.comment.entity.Comment;
 import com.koundary.domain.comment.repository.CommentRepository;
+import com.koundary.domain.language.entity.Language;
+import com.koundary.domain.language.service.TranslationService;
+import com.koundary.domain.language.util.NationalityLanguageMapper;
 import com.koundary.domain.post.entity.Post;
 import com.koundary.domain.post.repository.PostRepository;
 import com.koundary.domain.user.entity.User;
@@ -25,8 +28,8 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final TranslationService translationService;
 
-    /** 최상위 댓글 작성 */
     @Transactional
     public CommentResponse addComment(Long postId, Long userId, CommentCreateRequest req) {
         Post post = postRepository.findById(postId)
@@ -45,7 +48,6 @@ public class CommentService {
         return toDto(saved, userId, 0);
     }
 
-    /** 대댓글 작성 (대댓글의 대댓글은 제한) */
     @Transactional
     public CommentResponse addReply(Long parentCommentId, Long userId, CommentCreateRequest req) {
         Comment parent = commentRepository.findById(parentCommentId)
@@ -69,7 +71,6 @@ public class CommentService {
         return toDto(saved, userId, 0);
     }
 
-    /** 게시글의 최상위 댓글 페이지 조회 */
     public Page<CommentResponse> getComments(Long postId, Long currentUserId, Pageable pageable) {
         Page<Comment> page = commentRepository
                 .findByPost_PostIdAndParentIsNullOrderByCreatedAtAsc(postId, pageable);
@@ -77,7 +78,6 @@ public class CommentService {
         return page.map(c -> toDto(c, currentUserId, commentRepository.countByParent_Id(c.getId())));
     }
 
-    /** 특정 댓글의 대댓글 목록 조회 */
     public List<CommentResponse> getReplies(Long parentCommentId, Long currentUserId) {
         List<Comment> replies = commentRepository.findByParent_IdOrderByCreatedAtAsc(parentCommentId);
         return replies.stream()
@@ -85,7 +85,6 @@ public class CommentService {
                 .toList();
     }
 
-    /** 댓글 내용 수정 (본인만) */
     @Transactional
     public CommentResponse update(Long commentId, Long userId, CommentUpdateRequest req) {
         Comment c = commentRepository.findById(commentId)
@@ -100,7 +99,6 @@ public class CommentService {
         return toDto(c, userId, c.isTopLevel() ? commentRepository.countByParent_Id(c.getId()) : 0);
     }
 
-    /** 소프트 삭제 (본인만) */
     @Transactional
     public void delete(Long commentId, Long userId) {
         Comment c = commentRepository.findById(commentId)
@@ -118,13 +116,27 @@ public class CommentService {
         Long authorId = c.getUser().getUserId();
         Long postId = c.getPost().getPostId();
 
+        User viewer = (currentUserId != null) ? userRepository.findById(currentUserId).orElse(null) : null;
+        Language targetLanguage = Language.KO;
+        if (viewer != null && viewer.getNationality() != null) {
+            String canonical = NationalityLanguageMapper.canonicalize(viewer.getNationality());
+            targetLanguage = NationalityLanguageMapper.defaultLanguageOf(canonical);
+        }
+
+        String content = c.isDeleted() ? "(삭제된 댓글입니다)" : c.getContent();
+        if (!c.isDeleted() && targetLanguage != Language.KO) {
+            content = translationService.translateAndCache(
+                    "COMMENT", c.getId(), "content", c.getContent(), targetLanguage
+            );
+        }
+
         return CommentResponse.builder()
                 .commentId(c.getId())
                 .postId(postId)
                 .authorId(authorId)
                 .authorNickname(c.getUser().getNickname())
                 .authorProfileImage(c.getUser().getProfileImageUrl())
-                .content(c.isDeleted() ? "(삭제된 댓글입니다)" : c.getContent())
+                .content(content)
                 .deleted(c.isDeleted())
                 .mine(currentUserId != null && authorId.equals(currentUserId))
                 .createdAt(c.getCreatedAt())

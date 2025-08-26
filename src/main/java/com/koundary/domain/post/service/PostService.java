@@ -2,30 +2,28 @@ package com.koundary.domain.post.service;
 
 import com.koundary.domain.board.entity.Board;
 import com.koundary.domain.board.repository.BoardRepository;
-import com.koundary.domain.myPage.dto.MyCommentedPostItemResponse;
+import com.koundary.domain.language.entity.Language;
+import com.koundary.domain.language.service.TranslationService;
+import com.koundary.domain.language.util.NationalityLanguageMapper;
 import com.koundary.domain.post.dto.PostCreateRequest;
 import com.koundary.domain.post.dto.PostResponse;
 import com.koundary.domain.post.dto.PostUpdateRequest;
 import com.koundary.domain.post.entity.Image;
 import com.koundary.domain.post.entity.Post;
 import com.koundary.domain.post.repository.PostRepository;
-import com.koundary.domain.scrap.repository.ScrapRepository; // ✅ 추가
+import com.koundary.domain.scrap.repository.ScrapRepository;
 import com.koundary.domain.user.entity.User;
 import com.koundary.domain.user.repository.UserRepository;
-import com.koundary.global.security.CustomUserDetails;
 import com.koundary.global.util.S3Uploader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
+import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
@@ -34,9 +32,9 @@ public class PostService {
     private final BoardRepository boardRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final ScrapRepository scrapRepository; // ✅ 추가
-
+    private final ScrapRepository scrapRepository;
     private final S3Uploader s3Uploader;
+    private final TranslationService translationService;
 
     private static final String INFORMATION_BOARD_CODE = "INFORMATION";
     private static final String POST_IMAGE_DIR = "posts";
@@ -49,7 +47,6 @@ public class PostService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다"));
 
-        // 일반 게시판 + 정보글 체크 → 정보게시판에도 복사 (둘 다 같은 groupKey)
         if (!INFORMATION_BOARD_CODE.equals(boardCode) && Boolean.TRUE.equals(request.isInformation())) {
             Board infoBoard = boardRepository.findByBoardCode(INFORMATION_BOARD_CODE)
                     .orElseThrow(() -> new IllegalStateException("정보게시판이 존재하지 않습니다"));
@@ -64,10 +61,9 @@ public class PostService {
 
             postRepository.save(original);
             postRepository.save(copy);
-            return PostResponse.from(original); // 방금 작성 → 기본 false로 내려감
+            return PostResponse.from(original);
         }
 
-        // 단일 저장 (정보게시판 자체에 쓰는 경우 포함)
         Post post = buildPost(request, board, user, Boolean.TRUE.equals(request.isInformation()));
         postRepository.save(post);
         return PostResponse.from(post);
@@ -94,18 +90,16 @@ public class PostService {
         return post;
     }
 
-    // 기존 리스트 반환 (호환)
     @Transactional(readOnly = true)
     public List<PostResponse> getPostsByBoard(String boardCode) {
         Board board = boardRepository.findByBoardCode(boardCode)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시판입니다"));
 
         return postRepository.findAllByBoardOrderByCreatedAtDesc(board).stream()
-                .map(PostResponse::from) // 로그인 미반영 버전: isScrapped=false
+                .map(PostResponse::from)
                 .toList();
     }
 
-    // ✅ 페이징 버전 (viewerUserId로 isScrapped 채움)
     @Transactional(readOnly = true)
     public Page<PostResponse> getPostsByBoard(String boardCode, Pageable pageable, Long viewerUserId) {
         boardRepository.findByBoardCode(boardCode)
@@ -113,16 +107,36 @@ public class PostService {
 
         Page<Post> page = postRepository.findPageByBoardCode(boardCode, pageable);
 
-        if (viewerUserId == null || page.isEmpty()) {
-            return page.map(p -> PostResponse.from(p, false));
+        User viewer = (viewerUserId != null) ? userRepository.findById(viewerUserId).orElse(null) : null;
+        Language targetLanguage = Language.KO;
+        if (viewer != null && viewer.getNationality() != null) {
+            String canonical = NationalityLanguageMapper.canonicalize(viewer.getNationality());
+            targetLanguage = NationalityLanguageMapper.defaultLanguageOf(canonical);
         }
 
-        // N+1 방지: 한 번에 내가 스크랩한 postId 모으기
         List<Long> postIds = page.getContent().stream().map(Post::getPostId).toList();
-        List<Long> scrappedIds = scrapRepository.findScrappedPostIdsByUserAndPostIds(viewerUserId, postIds); // ✅ 여기서 사용
-        Set<Long> scrappedSet = new HashSet<>(scrappedIds);
+        Set<Long> scrappedSet = (viewerUserId != null) ? new HashSet<>(scrapRepository.findScrappedPostIdsByUserAndPostIds(viewerUserId, postIds)) : Collections.emptySet();
 
-        return page.map(p -> PostResponse.from(p, scrappedSet.contains(p.getPostId())));
+        final Language finalTargetLanguage = targetLanguage;
+        Function<Post, PostResponse> postMapper = post -> {
+            String title = post.getTitle();
+            String content = post.getContent();
+
+            if (finalTargetLanguage != Language.KO) {
+                title = translationService.translateAndCache("POST", post.getPostId(), "title", title, finalTargetLanguage);
+            }
+
+            boolean isScrapped = scrappedSet.contains(post.getPostId());
+            return new PostResponse(
+                    post.getPostId(), post.getBoard().getBoardCode(),
+                    title, content,
+                    post.getUser().getUserId(), post.getUser().getNickname(), post.getUser().getProfileImageUrl(),
+                    post.getImages().stream().map(Image::getImageUrl).toList(),
+                    post.getScrapCount(), isScrapped, post.getCreatedAt()
+            );
+        };
+
+        return page.map(postMapper);
     }
 
     @Transactional(readOnly = true)
@@ -158,12 +172,36 @@ public class PostService {
                         "게시글을 찾을 수 없습니다. (boardCode=%s, id=%d)".formatted(boardCode, postId)
                 ));
 
-        boolean isScrapped = false;
-        if (viewerUserId != null) {
-            isScrapped = scrapRepository.existsByPost_PostIdAndUser_UserId(postId, viewerUserId); // ✅ 여기서 사용
+        boolean isScrapped = (viewerUserId != null) && scrapRepository.existsByPost_PostIdAndUser_UserId(postId, viewerUserId);
+
+        User viewer = (viewerUserId != null) ? userRepository.findById(viewerUserId).orElse(null) : null;
+        Language targetLanguage = Language.KO;
+        if (viewer != null && viewer.getNationality() != null) {
+            String canonicalNationality = NationalityLanguageMapper.canonicalize(viewer.getNationality());
+            targetLanguage = NationalityLanguageMapper.defaultLanguageOf(canonicalNationality);
         }
 
-        return PostResponse.from(post, isScrapped);
+        String translatedTitle = post.getTitle();
+        String translatedContent = post.getContent();
+
+        if (targetLanguage != Language.KO) {
+            translatedTitle = translationService.translateAndCache("POST", post.getPostId(), "title", post.getTitle(), targetLanguage);
+            translatedContent = translationService.translateAndCache("POST", post.getPostId(), "content", post.getContent(), targetLanguage);
+        }
+
+        return new PostResponse(
+                post.getPostId(),
+                post.getBoard().getBoardCode(),
+                translatedTitle,
+                translatedContent,
+                post.getUser().getUserId(),
+                post.getUser().getNickname(),
+                post.getUser().getProfileImageUrl(),
+                post.getImages().stream().map(Image::getImageUrl).toList(),
+                post.getScrapCount(),
+                isScrapped,
+                post.getCreatedAt()
+        );
     }
 
     // ✅ 게시글 수정 (원본/복사본 동시 반영)
