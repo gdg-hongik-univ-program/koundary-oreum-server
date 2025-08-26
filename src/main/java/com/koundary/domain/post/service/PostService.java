@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +39,104 @@ public class PostService {
     private static final String INFORMATION_BOARD_CODE = "INFORMATION";
     private static final String POST_IMAGE_DIR = "posts";
 
+    /**
+     * 게시글을 번역 및 스크랩 정보가 포함된 PostResponse DTO로 변환하는 중앙 헬퍼 메서드.
+     * @param post 변환할 Post 엔티티
+     * @param viewerUserId 현재 조회하는 사용자의 ID
+     * @param translateContent 내용까지 번역할지 여부 (목록에서는 false, 상세에서는 true)
+     * @return 변환된 PostResponse
+     */
+    private PostResponse toTranslatedPostResponse(Post post, Long viewerUserId, boolean translateContent) {
+        // 1. 스크랩 상태 확인
+        boolean isScrapped = (viewerUserId != null) && scrapRepository.existsByPost_PostIdAndUser_UserId(post.getPostId(), viewerUserId);
+
+        // 2. 번역할 언어 결정
+        User viewer = (viewerUserId != null) ? userRepository.findById(viewerUserId).orElse(null) : null;
+        Language targetLanguage = Language.KO;
+        if (viewer != null && viewer.getNationality() != null && !viewer.getNationality().isEmpty()) {
+            String canonicalNationality = NationalityLanguageMapper.canonicalize(viewer.getNationality());
+            targetLanguage = NationalityLanguageMapper.defaultLanguageOf(canonicalNationality);
+        }
+
+        // 3. 번역 수행
+        String translatedTitle = post.getTitle();
+        String translatedContent = post.getContent();
+
+        if (targetLanguage != Language.KO) {
+            translatedTitle = translationService.translateAndCache(
+                    "POST", post.getPostId(), "title", post.getTitle(), targetLanguage
+            );
+            // 내용 번역은 필요할 때만 수행
+            if (translateContent) {
+                translatedContent = translationService.translateAndCache(
+                        "POST", post.getPostId(), "content", post.getContent(), targetLanguage
+                );
+            }
+        }
+
+        // 4. DTO 생성 및 반환
+        return new PostResponse(
+                post.getPostId(),
+                post.getBoard().getBoardCode(),
+                translatedTitle,
+                translatedContent,
+                post.getUser().getUserId(),
+                post.getUser().getNickname(),
+                post.getUser().getProfileImageUrl(),
+                post.getImages().stream().map(Image::getImageUrl).collect(Collectors.toList()),
+                post.getScrapCount(),
+                isScrapped,
+                post.getCreatedAt()
+        );
+    }
+
+    // 상세 조회 (내용까지 번역)
+    @Transactional(readOnly = true)
+    public PostResponse getPost(String boardCode, Long postId, Long viewerUserId) {
+        Post post = postRepository.findByPostIdAndBoard_BoardCode(postId, boardCode)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "게시글을 찾을 수 없습니다. (boardCode=%s, id=%d)".formatted(boardCode, postId)
+                ));
+        return toTranslatedPostResponse(post, viewerUserId, true); // 내용 번역 활성화
+    }
+
+    // 일반 목록 조회 (제목만 번역)
+    @Transactional(readOnly = true)
+    public Page<PostResponse> getPostsByBoard(String boardCode, Pageable pageable, Long viewerUserId) {
+        boardRepository.findByBoardCode(boardCode)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시판입니다"));
+
+        Page<Post> postPage = postRepository.findPageByBoardCode(boardCode, pageable);
+        return postPage.map(post -> toTranslatedPostResponse(post, viewerUserId, false)); // 내용 번역 비활성화
+    }
+
+    // 국적/대학별 게시판 조회 (제목만 번역)
+    @Transactional(readOnly = true)
+    public Page<PostResponse> getMyPostsByBoard(String boardCode, Long userId, Pageable pageable) {
+        User me = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다. id=" + userId));
+
+        Page<Post> postPage;
+        if ("NATIONALITY".equalsIgnoreCase(boardCode)) {
+            String nation = me.getNationality();
+            if (nation == null || nation.trim().isEmpty()) {
+                return Page.empty(); // 국가 정보 없으면 빈 페이지 반환
+            }
+            postPage = postRepository.findByBoard_BoardCodeAndUser_Nationality("NATIONALITY", nation, pageable);
+        } else if ("UNIVERSITY".equalsIgnoreCase(boardCode)) {
+            String univ = me.getUniversity();
+            if (univ == null || univ.trim().isEmpty()) {
+                return Page.empty(); // 대학 정보 없으면 빈 페이지 반환
+            }
+            postPage = postRepository.findByBoard_BoardCodeAndUser_University("UNIVERSITY", univ, pageable);
+        } else {
+            throw new IllegalArgumentException("지원하지 않는 보드 코드입니다: " + boardCode);
+        }
+
+        return postPage.map(post -> toTranslatedPostResponse(post, userId, false)); // 내용 번역 비활성화
+    }
+
+    // --- 이하 게시글 생성, 수정, 삭제 로직 (기존 코드와 동일하여 생략) ---
     @Transactional
     public PostResponse createPost(String boardCode, PostCreateRequest request, Long userId) {
         Board board = boardRepository.findByBoardCode(boardCode)
@@ -47,6 +145,7 @@ public class PostService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다"));
 
+        // 일반 게시판 + 정보글 체크 → 정보게시판에도 복사 (둘 다 같은 groupKey)
         if (!INFORMATION_BOARD_CODE.equals(boardCode) && Boolean.TRUE.equals(request.isInformation())) {
             Board infoBoard = boardRepository.findByBoardCode(INFORMATION_BOARD_CODE)
                     .orElseThrow(() -> new IllegalStateException("정보게시판이 존재하지 않습니다"));
@@ -61,9 +160,10 @@ public class PostService {
 
             postRepository.save(original);
             postRepository.save(copy);
-            return PostResponse.from(original);
+            return PostResponse.from(original); // 방금 작성 → 기본 false로 내려감
         }
 
+        // 단일 저장 (정보게시판 자체에 쓰는 경우 포함)
         Post post = buildPost(request, board, user, Boolean.TRUE.equals(request.isInformation()));
         postRepository.save(post);
         return PostResponse.from(post);
@@ -90,118 +190,69 @@ public class PostService {
         return post;
     }
 
-    @Transactional(readOnly = true)
-    public List<PostResponse> getPostsByBoard(String boardCode) {
+    // 멀티파트 생성
+    @Transactional
+    public PostResponse createPostWithFiles(
+            String boardCode,
+            PostCreateRequest request,
+            Long userId,
+            List<MultipartFile> images
+    ) {
+        // 1) 파일 업로드
+        List<String> uploadedUrls = uploadAll(images);
+
+        // 2) 요청 JSON 안의 imageUrls(있다면) + 업로드된 URL 병합
+        List<String> mergedUrls = mergeUrls(request.imageUrls(), uploadedUrls);
+
+        // 3) 기존 로직 + 이미지 세팅 버전으로 저장
         Board board = boardRepository.findByBoardCode(boardCode)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시판입니다"));
 
-        return postRepository.findAllByBoardOrderByCreatedAtDesc(board).stream()
-                .map(PostResponse::from)
-                .toList();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다"));
+
+        if (!INFORMATION_BOARD_CODE.equals(boardCode) && Boolean.TRUE.equals(request.isInformation())) {
+            Board infoBoard = boardRepository.findByBoardCode(INFORMATION_BOARD_CODE)
+                    .orElseThrow(() -> new IllegalStateException("정보게시판이 존재하지 않습니다"));
+
+            String groupKey = UUID.randomUUID().toString();
+
+            Post original = buildPostWithUrls(request, board, user, true, mergedUrls);
+            original.setGroupKey(groupKey);
+
+            Post copy = buildPostWithUrls(request, infoBoard, user, true, mergedUrls);
+            copy.setGroupKey(groupKey);
+
+            postRepository.save(original);
+            postRepository.save(copy);
+            return PostResponse.from(original);
+        }
+
+        Post post = buildPostWithUrls(request, board, user, Boolean.TRUE.equals(request.isInformation()), mergedUrls);
+        postRepository.save(post);
+        return PostResponse.from(post);
     }
 
-    @Transactional(readOnly = true)
-    public Page<PostResponse> getPostsByBoard(String boardCode, Pageable pageable, Long viewerUserId) {
-        boardRepository.findByBoardCode(boardCode)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시판입니다"));
+    // 이미지 URL 리스트를 명시적으로 주입하는 build 버전
+    private Post buildPostWithUrls(PostCreateRequest req, Board board, User user, boolean forceInformation, List<String> imageUrls) {
+        Post post = Post.builder()
+                .title(req.title())
+                .content(req.content())
+                .isInformation(forceInformation || Boolean.TRUE.equals(req.isInformation()))
+                .board(board)
+                .user(user)
+                .build();
 
-        Page<Post> page = postRepository.findPageByBoardCode(boardCode, pageable);
-
-        User viewer = (viewerUserId != null) ? userRepository.findById(viewerUserId).orElse(null) : null;
-        Language targetLanguage = Language.KO;
-        if (viewer != null && viewer.getNationality() != null) {
-            String canonical = NationalityLanguageMapper.canonicalize(viewer.getNationality());
-            targetLanguage = NationalityLanguageMapper.defaultLanguageOf(canonical);
-        }
-
-        List<Long> postIds = page.getContent().stream().map(Post::getPostId).toList();
-        Set<Long> scrappedSet = (viewerUserId != null) ? new HashSet<>(scrapRepository.findScrappedPostIdsByUserAndPostIds(viewerUserId, postIds)) : Collections.emptySet();
-
-        final Language finalTargetLanguage = targetLanguage;
-        Function<Post, PostResponse> postMapper = post -> {
-            String title = post.getTitle();
-            String content = post.getContent();
-
-            if (finalTargetLanguage != Language.KO) {
-                title = translationService.translateAndCache("POST", post.getPostId(), "title", title, finalTargetLanguage);
+        if (imageUrls != null) {
+            for (String url : imageUrls) {
+                Image image = Image.builder()
+                        .imageUrl(url)
+                        .post(post)
+                        .build();
+                post.getImages().add(image);
             }
-
-            boolean isScrapped = scrappedSet.contains(post.getPostId());
-            return new PostResponse(
-                    post.getPostId(), post.getBoard().getBoardCode(),
-                    title, content,
-                    post.getUser().getUserId(), post.getUser().getNickname(), post.getUser().getProfileImageUrl(),
-                    post.getImages().stream().map(Image::getImageUrl).toList(),
-                    post.getScrapCount(), isScrapped, post.getCreatedAt()
-            );
-        };
-
-        return page.map(postMapper);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<PostResponse> getMyPostsByBoard(String boardCode, Long userId, Pageable pageable) {
-        User me = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다. id=" + userId));
-
-        if ("NATIONALITY".equalsIgnoreCase(boardCode)) {
-            String nation = me.getNationality();
-            if (nation == null || nation.trim().isEmpty()) {
-                throw new IllegalStateException("회원 프로필에 국가 정보가 없습니다. 마이페이지에서 국가를 설정해주세요.");
-            }
-            return postRepository.findByBoard_BoardCodeAndUser_Nationality("NATIONALITY", nation, pageable)
-                    .map(PostResponse::from);
         }
-
-        if ("UNIVERSITY".equalsIgnoreCase(boardCode)) {
-            String univ = me.getUniversity();
-            if (univ == null || univ.trim().isEmpty()) {
-                throw new IllegalStateException("회원 프로필에 학교 정보가 없습니다. 마이페이지에서 학교를 설정해주세요.");
-            }
-            return postRepository.findByBoard_BoardCodeAndUser_University("UNIVERSITY", univ, pageable)
-                    .map(PostResponse::from);
-        }
-
-        throw new IllegalArgumentException("지원하지 않는 보드 코드입니다: " + boardCode);
-    }
-
-    @Transactional(readOnly = true)
-    public PostResponse getPost(String boardCode, Long postId, Long viewerUserId) {
-        Post post = postRepository.findByPostIdAndBoard_BoardCode(postId, boardCode)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "게시글을 찾을 수 없습니다. (boardCode=%s, id=%d)".formatted(boardCode, postId)
-                ));
-
-        boolean isScrapped = (viewerUserId != null) && scrapRepository.existsByPost_PostIdAndUser_UserId(postId, viewerUserId);
-
-        User viewer = (viewerUserId != null) ? userRepository.findById(viewerUserId).orElse(null) : null;
-        Language targetLanguage = Language.KO;
-        if (viewer != null && viewer.getNationality() != null) {
-            String canonicalNationality = NationalityLanguageMapper.canonicalize(viewer.getNationality());
-            targetLanguage = NationalityLanguageMapper.defaultLanguageOf(canonicalNationality);
-        }
-
-        String translatedTitle = post.getTitle();
-        String translatedContent = post.getContent();
-
-        if (targetLanguage != Language.KO) {
-            translatedTitle = translationService.translateAndCache("POST", post.getPostId(), "title", post.getTitle(), targetLanguage);
-            translatedContent = translationService.translateAndCache("POST", post.getPostId(), "content", post.getContent(), targetLanguage);
-        }
-
-        return new PostResponse(
-                post.getPostId(),
-                post.getBoard().getBoardCode(),
-                translatedTitle,
-                translatedContent,
-                post.getUser().getUserId(),
-                post.getUser().getNickname(),
-                post.getUser().getProfileImageUrl(),
-                post.getImages().stream().map(Image::getImageUrl).toList(),
-                post.getScrapCount(),
-                isScrapped,
-                post.getCreatedAt()
-        );
+        return post;
     }
 
     // ✅ 게시글 수정 (원본/복사본 동시 반영)
@@ -295,6 +346,17 @@ public class PostService {
         return PostResponse.from(target);
     }
 
+    private void applyUpdate(Post post, PostUpdateRequest req, List<Image> newImages, boolean isInformationFinal) {
+        post.updateContent(req.title(), req.content(), isInformationFinal);
+        if (newImages != null) {
+            List<Image> attach = new ArrayList<>();
+            for (Image img : newImages) {
+                attach.add(Image.builder().imageUrl(img.getImageUrl()).post(post).build());
+            }
+            post.replaceImages(attach);
+        }
+    }
+
     // 멀티파트 전용: 수정(JSON + files)
     @Transactional
     public PostResponse updatePostWithFiles(
@@ -308,9 +370,6 @@ public class PostService {
         List<String> uploadedUrls = uploadAll(newFiles);
 
         // 2) 최종 이미지 세트 결정(치환 규칙 유지)
-        // - req.imageUrls() != null → (req.imageUrls + 업로드 파일)로 치환
-        // - req.imageUrls() == null && 새 파일 존재 → 업로드 파일로 치환
-        // - 둘 다 없으면 → 이미지 변경 없음
         List<String> finalUrls = null;
         if (req.imageUrls() != null) {
             finalUrls = mergeUrls(req.imageUrls(), uploadedUrls);
@@ -318,7 +377,7 @@ public class PostService {
             finalUrls = uploadedUrls;
         }
 
-        // 3) 기존 updatePost 로직을 재사용하되, newImages 리스트를 finalUrls로 대체
+        // 3) 기존 updatePost 로직 재사용
         Post target = postRepository.findByPostIdAndBoard_BoardCode(postId, boardCode)
                 .orElseThrow(() -> new IllegalArgumentException("수정 대상 게시글을 찾을 수 없습니다."));
         if (!Objects.equals(target.getUser().getUserId(), userId)) {
@@ -406,18 +465,6 @@ public class PostService {
         return PostResponse.from(target);
     }
 
-
-    private void applyUpdate(Post post, PostUpdateRequest req, List<Image> newImages, boolean isInformationFinal) {
-        post.updateContent(req.title(), req.content(), isInformationFinal);
-        if (newImages != null) {
-            List<Image> attach = new ArrayList<>();
-            for (Image img : newImages) {
-                attach.add(Image.builder().imageUrl(img.getImageUrl()).post(post).build());
-            }
-            post.replaceImages(attach);
-        }
-    }
-
     // ✅ 게시글 삭제 (세트로 함께 삭제)
     @Transactional
     public void deletePost(String boardCode, Long postId, Long userId) {
@@ -438,80 +485,15 @@ public class PostService {
         }
     }
 
-    // 멀티파트 생성
-    @Transactional
-    public PostResponse createPostWithFiles(
-            String boardCode,
-            PostCreateRequest request,
-            Long userId,
-            List<MultipartFile> images
-    ) {
-        // 1) 파일 업로드
-        List<String> uploadedUrls = uploadAll(images);
-
-        // 2) 요청 JSON 안의 imageUrls(있다면) + 업로드된 URL 병합
-        List<String> mergedUrls = mergeUrls(request.imageUrls(), uploadedUrls);
-
-        // 3) 기존 로직 + 이미지 세팅 버전으로 저장
-        Board board = boardRepository.findByBoardCode(boardCode)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시판입니다"));
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다"));
-
-        if (!INFORMATION_BOARD_CODE.equals(boardCode) && Boolean.TRUE.equals(request.isInformation())) {
-            Board infoBoard = boardRepository.findByBoardCode(INFORMATION_BOARD_CODE)
-                    .orElseThrow(() -> new IllegalStateException("정보게시판이 존재하지 않습니다"));
-
-            String groupKey = UUID.randomUUID().toString();
-
-            Post original = buildPostWithUrls(request, board, user, true, mergedUrls);
-            original.setGroupKey(groupKey);
-
-            Post copy = buildPostWithUrls(request, infoBoard, user, true, mergedUrls);
-            copy.setGroupKey(groupKey);
-
-            postRepository.save(original);
-            postRepository.save(copy);
-            return PostResponse.from(original);
-        }
-
-        Post post = buildPostWithUrls(request, board, user, Boolean.TRUE.equals(request.isInformation()), mergedUrls);
-        postRepository.save(post);
-        return PostResponse.from(post);
-    }
-
-    // 이미지 URL 리스트를 명시적으로 주입하는 build 버전
-    private Post buildPostWithUrls(PostCreateRequest req, Board board, User user, boolean forceInformation, List<String> imageUrls) {
-        Post post = Post.builder()
-                .title(req.title())
-                .content(req.content())
-                .isInformation(forceInformation || Boolean.TRUE.equals(req.isInformation()))
-                .board(board)
-                .user(user)
-                .build();
-
-        if (imageUrls != null) {
-            for (String url : imageUrls) {
-                Image image = Image.builder()
-                        .imageUrl(url)
-                        .post(post)
-                        .build();
-                post.getImages().add(image);
-            }
-        }
-        return post;
-    }
-
     // -----------------------------
     // S3 관련 헬퍼
     // -----------------------------
     private List<String> uploadAll(List<MultipartFile> files) {
-        if (files == null || files.isEmpty()) return List.of();
+        if (files == null || files.isEmpty()) return Collections.emptyList();
         return files.stream()
                 .filter(f -> f != null && !f.isEmpty())
-                .map(f -> s3Uploader.upload(f, POST_IMAGE_DIR)) // S3에 업로드 후 public URL 반환
-                .toList();
+                .map(f -> s3Uploader.upload(f, POST_IMAGE_DIR))
+                .collect(Collectors.toList());
     }
 
     private void deleteImagesFromS3(Post post) {
@@ -523,7 +505,7 @@ public class PostService {
                 String key = s3Uploader.keyFromUrl(url);
                 s3Uploader.delete(key);
             } catch (Exception ignored) {
-                // URL 포맷이 다르거나 외부 링크일 수 있으니 서비스 흐름은 유지
+                // Log this error in a real application
             }
         }
     }
