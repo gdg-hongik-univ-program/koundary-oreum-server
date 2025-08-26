@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PostService {
 
     private final BoardRepository boardRepository;
@@ -39,18 +40,9 @@ public class PostService {
     private static final String INFORMATION_BOARD_CODE = "INFORMATION";
     private static final String POST_IMAGE_DIR = "posts";
 
-    /**
-     * 게시글을 번역 및 스크랩 정보가 포함된 PostResponse DTO로 변환하는 중앙 헬퍼 메서드.
-     * @param post 변환할 Post 엔티티
-     * @param viewerUserId 현재 조회하는 사용자의 ID
-     * @param translateContent 내용까지 번역할지 여부 (목록에서는 false, 상세에서는 true)
-     * @return 변환된 PostResponse
-     */
     private PostResponse toTranslatedPostResponse(Post post, Long viewerUserId, boolean translateContent) {
-        // 1. 스크랩 상태 확인
         boolean isScrapped = (viewerUserId != null) && scrapRepository.existsByPost_PostIdAndUser_UserId(post.getPostId(), viewerUserId);
 
-        // 2. 번역할 언어 결정
         User viewer = (viewerUserId != null) ? userRepository.findById(viewerUserId).orElse(null) : null;
         Language targetLanguage = Language.KO;
         if (viewer != null && viewer.getNationality() != null && !viewer.getNationality().isEmpty()) {
@@ -58,23 +50,16 @@ public class PostService {
             targetLanguage = NationalityLanguageMapper.defaultLanguageOf(canonicalNationality);
         }
 
-        // 3. 번역 수행
         String translatedTitle = post.getTitle();
         String translatedContent = post.getContent();
 
         if (targetLanguage != Language.KO) {
-            translatedTitle = translationService.translateAndCache(
-                    "POST", post.getPostId(), "title", post.getTitle(), targetLanguage
-            );
-            // 내용 번역은 필요할 때만 수행
+            translatedTitle = translationService.translateAndCache("POST", post.getPostId(), "title", post.getTitle(), targetLanguage);
             if (translateContent) {
-                translatedContent = translationService.translateAndCache(
-                        "POST", post.getPostId(), "content", post.getContent(), targetLanguage
-                );
+                translatedContent = translationService.translateAndCache("POST", post.getPostId(), "content", post.getContent(), targetLanguage);
             }
         }
 
-        // 4. DTO 생성 및 반환
         return new PostResponse(
                 post.getPostId(),
                 post.getBoard().getBoardCode(),
@@ -90,53 +75,35 @@ public class PostService {
         );
     }
 
-    // 상세 조회 (내용까지 번역)
-    @Transactional(readOnly = true)
     public PostResponse getPost(String boardCode, Long postId, Long viewerUserId) {
         Post post = postRepository.findByPostIdAndBoard_BoardCode(postId, boardCode)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "게시글을 찾을 수 없습니다. (boardCode=%s, id=%d)".formatted(boardCode, postId)
-                ));
-        return toTranslatedPostResponse(post, viewerUserId, true); // 내용 번역 활성화
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다. (boardCode=%s, id=%d)".formatted(boardCode, postId)));
+        return toTranslatedPostResponse(post, viewerUserId, true);
     }
 
-    // 일반 목록 조회 (제목만 번역)
-    @Transactional(readOnly = true)
     public Page<PostResponse> getPostsByBoard(String boardCode, Pageable pageable, Long viewerUserId) {
-        boardRepository.findByBoardCode(boardCode)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시판입니다"));
-
+        boardRepository.findByBoardCode(boardCode).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시판입니다"));
         Page<Post> postPage = postRepository.findPageByBoardCode(boardCode, pageable);
-        return postPage.map(post -> toTranslatedPostResponse(post, viewerUserId, false)); // 내용 번역 비활성화
+        return postPage.map(post -> toTranslatedPostResponse(post, viewerUserId, false));
     }
 
-    // 국적/대학별 게시판 조회 (제목만 번역)
-    @Transactional(readOnly = true)
     public Page<PostResponse> getMyPostsByBoard(String boardCode, Long userId, Pageable pageable) {
-        User me = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다. id=" + userId));
-
+        User me = userRepository.findById(userId).orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다. id=" + userId));
         Page<Post> postPage;
         if ("NATIONALITY".equalsIgnoreCase(boardCode)) {
             String nation = me.getNationality();
-            if (nation == null || nation.trim().isEmpty()) {
-                return Page.empty(); // 국가 정보 없으면 빈 페이지 반환
-            }
+            if (nation == null || nation.trim().isEmpty()) return Page.empty();
             postPage = postRepository.findByBoard_BoardCodeAndUser_Nationality("NATIONALITY", nation, pageable);
         } else if ("UNIVERSITY".equalsIgnoreCase(boardCode)) {
             String univ = me.getUniversity();
-            if (univ == null || univ.trim().isEmpty()) {
-                return Page.empty(); // 대학 정보 없으면 빈 페이지 반환
-            }
+            if (univ == null || univ.trim().isEmpty()) return Page.empty();
             postPage = postRepository.findByBoard_BoardCodeAndUser_University("UNIVERSITY", univ, pageable);
         } else {
             throw new IllegalArgumentException("지원하지 않는 보드 코드입니다: " + boardCode);
         }
-
-        return postPage.map(post -> toTranslatedPostResponse(post, userId, false)); // 내용 번역 비활성화
+        return postPage.map(post -> toTranslatedPostResponse(post, userId, false));
     }
 
-    // --- 이하 게시글 생성, 수정, 삭제 로직 (기존 코드와 동일하여 생략) ---
     @Transactional
     public PostResponse createPost(String boardCode, PostCreateRequest request, Long userId) {
         Board board = boardRepository.findByBoardCode(boardCode)

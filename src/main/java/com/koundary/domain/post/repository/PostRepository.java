@@ -28,19 +28,20 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // 게시판별 전체 조회 (최신순)
     List<Post> findAllByBoardOrderByCreatedAtDesc(Board board);
 
+
+    // ✅ [수정] 게시판별 페이지 조회 (최신순) - N+1 문제 해결
+    @Query(value = """
+        SELECT p FROM Post p
+        JOIN FETCH p.user u
+        JOIN FETCH p.board b
+        WHERE b.boardCode = :boardCode
+        """,
+            countQuery = "SELECT COUNT(p) FROM Post p WHERE p.board.boardCode = :boardCode")
+    Page<Post> findPageByBoardCode(@Param("boardCode") String boardCode, Pageable pageable);
+
     // ✅ 게시글 상세 (boardCode와 함께 안전하게 조회)
     @EntityGraph(attributePaths = {"images", "user"})
     Optional<Post> findByPostIdAndBoard_BoardCode(Long postId, String boardCode);
-
-    // ✅ 게시판별 페이지 조회 (최신순)
-    @Query("""
-        select p
-        from Post p
-        join p.board b
-        where b.boardCode = :boardCode
-        order by p.createdAt desc
-    """)
-    Page<Post> findPageByBoardCode(@Param("boardCode") String boardCode, Pageable pageable);
 
     // ✅ groupKey로 두 글(원본/복사) 함께 가져오기
     @EntityGraph(attributePaths = {"images", "user", "board"})
