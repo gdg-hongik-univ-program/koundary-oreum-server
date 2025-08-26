@@ -5,6 +5,7 @@ import com.koundary.domain.scrap.entity.Scrap;
 import com.koundary.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize; // BatchSize import 추가
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,35 +33,29 @@ public class Post {
 
     private boolean isInformation;
 
-    // ✅ 원본/복사본을 묶는 키 (둘 다 동일한 값)
     @Column(length = 36)
     private String groupKey;
 
-    // ✅ 스크랩 수 (기본값 0)
     @Column(nullable = false)
     private int scrapCount = 0;
 
-    // ✅ 낙관적 잠금(동시성 보호)
     @Version
     private Long version;
 
-
-    // 게시판
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id")
     private Board board;
 
-    // 작성자
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    // 이미지
+    // ✅ [수정] N+1 문제 해결을 위해 @BatchSize 어노테이션 추가
+    @BatchSize(size = 100)
     @Builder.Default
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Image> images = new ArrayList<>();
 
-    // 글이 지워질 때 해당 글을 스크랩한 레코드 제거
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Scrap> scraps = new ArrayList<>();
 
