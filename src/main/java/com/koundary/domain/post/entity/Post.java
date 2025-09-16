@@ -50,7 +50,7 @@ public class Post {
     @JoinColumn(name = "user_id")
     private User user;
 
-    // ✅ [수정] N+1 문제 해결을 위해 @BatchSize 어노테이션 추가
+    //N+1 문제 해결을 위해 @BatchSize 어노테이션
     @BatchSize(size = 100)
     @Builder.Default
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
