@@ -1,0 +1,25 @@
+ Volume in drive C has no label.
+ Volume Serial Number is 8642-3A39
+
+ Directory of C:\Users\82109\Desktop\koundary-oreum-server
+
+2025-10-01  오전 10:16    <DIR>          .
+2025-09-30  오후 07:32    <DIR>          ..
+2025-08-10  오전 12:08                57 .gitattributes
+2025-09-16  오후 04:04               513 .gitignore
+2025-09-16  오후 03:12    <DIR>          .gradle
+2025-09-30  오전 01:16    <DIR>          .idea
+2025-09-16  오후 03:12    <DIR>          build
+2025-08-14  오후 05:18             1,640 build.gradle
+2025-08-10  오전 12:08    <DIR>          gradle
+2025-08-10  오전 12:08             8,733 gradlew
+2025-08-10  오전 12:08             2,937 gradlew.bat
+2025-08-10  오전 12:08    <DIR>          koundary
+2025-09-16  오후 03:35             1,678 koundary-ec2-key.pem
+2025-08-09  오후 11:33    <DIR>          out
+2025-10-01  오전 10:16                 0 pem
+2025-07-28  오후 02:01                67 README.md
+2025-08-10  오전 12:08                31 settings.gradle
+2025-08-26  오후 09:14    <DIR>          src
+               9 File(s)         15,656 bytes
+               9 Dir(s)  14,447,493,120 bytes free
